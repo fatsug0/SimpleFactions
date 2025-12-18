@@ -1,8 +1,10 @@
 package com.gus.simpleFactions;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -15,17 +17,19 @@ public class FactionManager {
 
     public record FactionInvite(UUID invitedPlayer,  FactionObject invitingFaction){}
 
-    public ArrayList<FactionObject> existingFactions;
-    public Map<UUID, FactionObject> playerFactionLink;
-    public ArrayList<FactionInvite> pendingFactionInvites;
+    public ArrayList<FactionObject> existingFactions = new ArrayList<>();
+    public Map<UUID, FactionObject> playerFactionLink = new HashMap<>();
+    public ArrayList<FactionInvite> pendingFactionInvites = new ArrayList<>();
 
-    public Map<Chunk, FactionObject> claimedChunks;
-    public ArrayList<Chunk> protectedChunks;
+    public Map<Chunk, FactionObject> claimedChunks = new HashMap<>();
+    public ArrayList<Chunk> protectedChunks = new ArrayList<>();
 
     public void CreateFaction(UUID player, String factionName){
         FactionObject newFaction = new FactionObject(plugin, player, factionName);
         existingFactions.add(newFaction);
         playerFactionLink.put(player, newFaction);
+
+        Bukkit.getPlayer(player).sendMessage("You have created a new faction: " + factionName + " !");
     }
 
     public void JoinFaction(UUID player, String factionName){

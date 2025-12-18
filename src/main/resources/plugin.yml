@@ -2,3 +2,6 @@ name: Simple-Factions
 version: '0.1.0'
 main: com.gus.simpleFactions.SimpleFactions
 api-version: '1.21'
+commands:
+  faction:
+    aliases: [f, fac]

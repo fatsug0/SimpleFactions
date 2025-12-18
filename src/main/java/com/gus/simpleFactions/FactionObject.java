@@ -16,9 +16,11 @@ public class FactionObject {
         this.factionOwner = player;
         this.factionMembers.add(player);
 
+        this.plugin = plugin;
         this.factionManager = plugin.factionManager;
     }
 
+    private final SimpleFactions plugin;
     private final FactionManager factionManager;
 
     private final UUID factionOwner;
@@ -75,6 +77,7 @@ public class FactionObject {
 
     public void TeleportHome(UUID player){
         // Use a Bukkit Runnable
+        plugin.teleportManager.StartTeleport(player, 5, getFactionHome());
     }
 
     public void SetHome(UUID player){
@@ -124,15 +127,17 @@ public class FactionObject {
 
     }
 
-    public String SendFactionInfo(UUID player){
+    public void SendFactionInfo(UUID player){
         // Send Important information of the Faction to the player for a quick view:
         // - FactionName CHECK
         // - FactionOwner CHECK
         // - NumberOfMembers CHECK
         // - And more if needed ...
-        return "Here is the information about your faction: §a§l" + this.getFactionName() +
-                "The owner of this faction is : §l" + Objects.requireNonNull(Bukkit.getPlayer(player)).getName() +
-                "The faction currently count " + this.getFactionMembers().size() + " members";
+        Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage(
+                "Here is the information about your faction: §a§l" + this.getFactionName() +
+                        "The owner of this faction is : §l" + Objects.requireNonNull(Bukkit.getPlayer(player)).getName() +
+                        "The faction currently count " + this.getFactionMembers().size() + " members"
+        );
     }
 
     public void LeaveFaction(UUID player){
