@@ -3,7 +3,6 @@ package com.gus.simpleFactions.Commands;
 import com.gus.simpleFactions.FactionManager;
 import com.gus.simpleFactions.FactionObject;
 import com.gus.simpleFactions.SimpleFactions;
-import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -12,12 +11,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class FactionCommand implements CommandExecutor {
 
-    private SimpleFactions plugin;
+    private final SimpleFactions plugin;
     public FactionCommand(JavaPlugin plugin) {
         this.plugin = (SimpleFactions) plugin;
     }
-
-    private NamespacedKey hasFactionKey;
 
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String [] strings) {
@@ -41,6 +38,14 @@ public class FactionCommand implements CommandExecutor {
                         if (!player.hasPermission("factions.join")) break;
                         if (strings.length == 2) {
                             factionHandler.JoinFaction(player.getUniqueId(), strings[1]);
+                        } else {
+                            player.sendMessage("§4Wrong use of command, use /f help !");
+                        }
+                        break;
+
+                    case "help":
+                        if (strings.length == 1){
+                            factionHandler.SendHelp(player.getUniqueId());
                         } else {
                             player.sendMessage("§4Wrong use of command, use /f help !");
                         }
@@ -129,7 +134,6 @@ public class FactionCommand implements CommandExecutor {
                         break;
 
                     case "help":
-                        if (!player.hasPermission("factions.help")) break;
                         if (strings.length == 1){
                             factionHandler.SendHelp(player.getUniqueId());
                         } else {

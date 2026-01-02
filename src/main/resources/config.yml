@@ -1,0 +1,41 @@
+# +============================================+
+# |     ____ ___ __  __ ____  _     _____      |
+# |    / ___|_ _|  \/  |  _ \| |   | ____|     |
+# |    \___ \| || |\/| | |_) | |   |  _|       |
+# |     ___) | || |  | |  __/| |___| |___      |
+# |    |____/___|_|  |_|_|   |_____|_____|     |
+# | _____ _    ____ _____ ___ ___  _   _ ____  |
+# ||  ___/ \  / ___|_   _|_ _/ _ \| \ | / ___| |
+# || |_ / _ \| |     | |  | | | | |  \| \___ \ |
+# ||  _/ ___ \ |___  | |  | | |_| | |\  |___) ||
+# ||_|/_/   \_\____| |_| |___\___/|_| \_|____/ |
+# +============================================+
+#             Developed by fatusg0
+
+# Use this config file to personalize the factions plugins to your likings
+
+faction:
+
+  # Base options around the faction object (faction object being the faction class creating a faction)
+  object:
+    base-faction-power: 10
+    base-faction-power-per-member: 10
+    weak-claims-enabled: true
+    weak-amount-coefficient: 1.5
+
+  # What is blocked in these types of claims (hard/weak)
+  hard-claim:
+    block-break: false
+    block-place: false
+    interact: false
+    pvp: false
+    entity-damage: false
+  weak-claim:
+    block-break: false
+    block-place: false
+    interact: true
+    pvp: true
+    entity-damage: true
+
+# Enable the BlueMap addon of the plugin (be able to see the different factions on BlueMap)
+enable-bluemap-addon: true
