@@ -1,5 +1,11 @@
 package com.gus.simpleFactions;
 
+import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.Style;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -16,7 +22,9 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.server.ServerLoadEvent;
+import org.bukkit.scoreboard.Team;
 
+import java.awt.*;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -151,6 +159,26 @@ public class MainEventListener implements Listener {
 
         // Update player chunk state
         UpdatePlayerChunkState(e.getPlayer().getUniqueId(), e.getPlayer().getLocation().getChunk());
+
+        // Set player rank in tab (if in any)
+        if (plugin.factionManager.playerFactionLink.get(e.getPlayer().getUniqueId()) != null){
+            var scoreboard = Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard();
+            scoreboard.getTeams().forEach(t -> t.removeEntry(e.getPlayer().getName()));
+            Objects.requireNonNull(scoreboard.getTeam("faction" + plugin.factionManager.playerFactionLink.get(e.getPlayer().getUniqueId()).getFactionName())).addEntry(e.getPlayer().getName());
+        }
+
+    }
+
+    private Component useMiniMessage(String text){
+        final MiniMessage MM = MiniMessage.miniMessage();
+        final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
+                .character('§')
+                .hexColors()
+                .useUnusualXRepeatedCharacterHexFormat()
+                .build();
+
+        Component parsed = MM.deserialize("<shadow:#000000FF><b>" + text);
+        return parsed;
     }
 
     @EventHandler

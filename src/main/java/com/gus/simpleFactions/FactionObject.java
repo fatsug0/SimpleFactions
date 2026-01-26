@@ -10,17 +10,19 @@ import de.bluecolored.bluemap.api.markers.ShapeMarker;
 import de.bluecolored.bluemap.api.math.Color;
 import de.bluecolored.bluemap.api.math.Line;
 import de.bluecolored.bluemap.api.math.Shape;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.Team;
 
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.UUID;
+
+import java.util.*;
 
 public class FactionObject {
 
@@ -31,13 +33,15 @@ public class FactionObject {
         this.power = factionStartPower;
         this.maxWeakChunks = Math.round(factionStartPower * maxRaidableChunksCoefficient);
 
-        // Classes related
+        // Classes instances
         this.plugin = plugin;
         this.factionManager = plugin.factionManager;
 
-        // BlueMap related
+        // BlueMap stuff
         this.markerSet = MarkerSet.builder().label("FactionMarkerSet " + factionName).build();
         this.factionClaimColor = factionClaimColor;
+
+//        createTabTeam();
     }
 
     private final SimpleFactions plugin;
@@ -73,6 +77,12 @@ public class FactionObject {
         return this.weakChunks;
     }
 
+    private ArrayList<FactionRank> existingFactionRanks = new ArrayList<>();
+    private Map<UUID, FactionRank> factionRank = new HashMap<>();
+    public Map<UUID, FactionRank> getFactionRank() {
+        return this.factionRank;
+    }
+
     private int power;
     public int getPower() {
         return this.power;
@@ -92,11 +102,15 @@ public class FactionObject {
     private final MarkerSet markerSet;
     private final Color factionClaimColor;
 
+
+    /*
+    FACTION RELATED
+     */
     public void InvitePlayer(String invitingPlayer) {
         Player player = Bukkit.getPlayer(invitingPlayer);
 
         // Player already has a pending invite for the same faction
-        assert player != null;
+        if (player == null) return;
         if (factionManager.pendingFactionInvites.contains(new FactionManager.FactionInvite(player.getUniqueId(), this)))
             return;
 
@@ -106,40 +120,50 @@ public class FactionObject {
         player.sendMessage("§4You have been invited to join the faction " + this.getFactionName() + " !");
     }
 
-    public void KickPlayer(UUID player) {
+    public void KickPlayer(UUID playerUUID) {
+        if (playerUUID == null) return;
+
         // Check if the player is in the faction
-        if (!factionManager.playerFactionLink.containsKey(player)) return;
+        if (!factionManager.playerFactionLink.containsKey(playerUUID)) return;
 
         // Remove him from the faction, Faction side
-        this.factionMembers.remove(player);
+        this.factionMembers.remove(playerUUID);
 
         // Remove him from the faction, Manager side
-        factionManager.playerFactionLink.remove(player);
+        factionManager.playerFactionLink.remove(playerUUID);
 
-        Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage("§2You have been kicked of the faction: " + this.getFactionName() + " !");
+        Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).sendMessage("§2You have been kicked of the faction: " + this.getFactionName() + " !");
     }
 
-    public void TeleportHome(UUID player) {
+    public void TeleportHome(UUID playerUUID) {
+        if (playerUUID == null) return;
+
         // Use a Bukkit Runnable
-        plugin.teleportManager.StartTeleport(player, 5, getFactionHome());
+        plugin.teleportManager.StartTeleport(playerUUID, 5, getFactionHome());
     }
 
-    public void SetHome(UUID player) {
+    public void SetHome(UUID playerUUID) {
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player == null) return;
+
         // Same home set, cancel set home
-        if (Objects.requireNonNull(Bukkit.getPlayer(player)).getLocation().equals(getFactionHome())) return;
+        if (player.getLocation().equals(getFactionHome())) return;
 
         // Remove and set the new Faction home
-        this.factionHome = Objects.requireNonNull(Bukkit.getPlayer(player)).getLocation();
+        this.factionHome = player.getLocation();
 
-        Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage("§2You have, set the home of your faction !");
+        player.sendMessage("§2You have, set the home of your faction !");
     }
 
-    public void ClaimLand(UUID player) {
-        Chunk chunkToClaim = Objects.requireNonNull(Bukkit.getPlayer(player)).getLocation().getChunk();
+    public void ClaimLand(UUID playerUUID) {
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player == null) return;
+
+        Chunk chunkToClaim = player.getLocation().getChunk();
 
         // Check if the Chunk is faction land (needs to be beside another claimed chunk)
         if (!claimedChunks.isEmpty() && !isChunkInLand(chunkToClaim)) {
-            Objects.requireNonNull(Bukkit.getPlayer(player)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§4You have to claim a chunk beside another claimed chunk !"));
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§4You have to claim a chunk beside another claimed chunk !"));
             return;
         }
 
@@ -157,18 +181,18 @@ public class FactionObject {
             weakClaim = true;
 
         } else {
-            Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage("MAX AMOUNT OF CHUNKS REACHED");
+            player.sendMessage("MAX AMOUNT OF CHUNKS REACHED");
             return;
         }
 
         // Can only claim in the overworld
-        if (!Objects.equals(Bukkit.getWorld("world"), Objects.requireNonNull(Bukkit.getPlayer(player)).getWorld()))
+        if (!Objects.equals(Bukkit.getWorld("world"), player.getWorld()))
             return;
 
 
         // Check if the player is claiming in a valid area (not already claimed)
         if (factionManager.linkedChunks.containsKey(chunkToClaim)) {
-            Objects.requireNonNull(Bukkit.getPlayer(player)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§4The chunk you are trying to claim is already claimed (by your faction or another) !"));
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§4The chunk you are trying to claim is already claimed (by your faction or another) !"));
             return;
         }
 
@@ -177,12 +201,10 @@ public class FactionObject {
 
         // Change player state
         if (weakClaim){
-            factionManager.playerInProtectedChunks.put(player, PlayerChunkState.WEAK);
+            factionManager.playerInProtectedChunks.put(playerUUID, PlayerChunkState.WEAK);
         } else {
-            factionManager.playerInProtectedChunks.put(player, PlayerChunkState.HARD);
+            factionManager.playerInProtectedChunks.put(playerUUID, PlayerChunkState.HARD);
         }
-
-        Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage("§2You have, claimed this chunk for your faction !");
 
         if (USE_BLUEMAP_ADDON) {
 
@@ -238,14 +260,19 @@ public class FactionObject {
                 });
             });
         }
-        DrawFactionOutsideLine();
+        drawFactionOutsideLine();
+
+        player.sendMessage("§2You have, claimed this chunk for your faction !");
     }
 
-    public void UnClaimLand(UUID player) {
-        Chunk chunkToCheck = Objects.requireNonNull(Bukkit.getPlayer(player)).getLocation().getChunk();
+    public void UnClaimLand(UUID playerUUID) {
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player == null) return;
+
+        Chunk chunkToCheck = player.getLocation().getChunk();
 
         // Can only unclaim in the overworld
-        if (!Objects.equals(Bukkit.getWorld("world"), Objects.requireNonNull(Bukkit.getPlayer(player)).getWorld()))
+        if (!Objects.equals(Bukkit.getWorld("world"), player.getWorld()))
             return;
 
         // Check if the player is unclaiming in a valid area (standing on a claimed chunk and claimed by his faction)
@@ -255,12 +282,10 @@ public class FactionObject {
         factionManager.linkedChunks.remove(chunkToCheck);
 
         // Change player state
-        factionManager.playerInProtectedChunks.put(player, PlayerChunkState.WILDERNESS);
+        factionManager.playerInProtectedChunks.put(playerUUID, PlayerChunkState.WILDERNESS);
 
         // Unlink Chunk to Faction
         this.getClaimedChunks().remove(chunkToCheck);
-
-        Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage("§4You have, unclaimed this chunk for your faction !");
 
         if (USE_BLUEMAP_ADDON) {
 
@@ -279,74 +304,169 @@ public class FactionObject {
                 });
             });
         }
+        player.sendMessage("§4You have, unclaimed this chunk for your faction !");
     }
 
-    public void SendFactionInfo(UUID player) {
-        // Send Important information of the Faction to the player for a quick view:
-        // - FactionName CHECK
-        // - FactionOwner CHECK
-        // - NumberOfMembers CHECK
-        // - And more if needed ...
-        Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage(
-                "Here is the information about your faction: §a§l" + this.getFactionName() +
-                        "The owner of this faction is : §l" + Objects.requireNonNull(Bukkit.getPlayer(player)).getName() +
-                        "The faction currently count " + this.getFactionMembers().size() + " members"
-        );
-    }
-
-    public void LeaveFaction(UUID player) {
+    public void LeaveFaction(UUID playerUUID) {
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player == null) return;
 
         // Check if the player is not the Owner of the Faction
-        if (player.equals(this.getOwner())) return;
+        if (playerUUID.equals(this.getOwner())) return;
 
         // Remove player from FactionManagers FactionPlayerLink ArrayList
-        factionManager.playerFactionLink.remove(player);
+        factionManager.playerFactionLink.remove(playerUUID);
+
+        //Remove player from team
+        Objects.requireNonNull(Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeam(toTeamName(this.getFactionName()))).removeEntry(player.getName());
 
         // Remove player from the Factions member list
-        this.factionMembers.remove(player);
+        this.factionMembers.remove(playerUUID);
 
-        Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage("§4You have left faction the faction " + this.getFactionName());
+        player.sendMessage("§4You have left faction the faction " + this.getFactionName());
     }
 
-    public void DisbandFaction(UUID player) {
-//        // Check if the player is the Owner of the Faction
-//        if (!player.equals(this.getOwner())) return;
-//
-//        // Remove EVERY player of the Faction from FactionManagers FactionPlayerLink ArrayList
-//        for (UUID uuid : factionManager.playerFactionLink.keySet()){
-//            if (this.getFactionMembers().contains(uuid)){
-//                factionManager.playerFactionLink.remove(uuid);
-//            }
-//        }
-//
-//        // Remove EVERY player from the Factions member list
-//        for (UUID uuid : this.getFactionMembers()){
-//            this.factionMembers.remove(uuid);
-//        }
-//
-//        // Unclaim every claimed land (and weak chunks)
-//        for (Chunk chunk : factionManager.linkedChunks.keySet()){
-//            if (factionManager.linkedChunks.get(chunk).equals(this)){
-//                factionManager.linkedChunks.remove(chunk);
-//            }
-//        }
-//
-//        // Remove this faction from the factions lists in the FactionManager
-//        factionManager.existingFactions.remove(this);
-//
-//        Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage("§4You have, as faction owner, disbanded your faction " + this.getFactionName());
+    public void DisbandFaction(UUID playerUUID) {
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player == null) return;
 
-        // Remove player from FactionManagers FactionPlayerLink ArrayList
-        factionManager.playerFactionLink.remove(player);
+        // Check if the player is the Owner of the Faction
+        if (!playerUUID.equals(this.getOwner())) return;
 
-        // Remove player from the Factions member list
-        this.factionMembers.remove(player);
+        // Remove EVERY player of the Faction from FactionManagers FactionPlayerLink ArrayList
+        for (UUID uuid : factionManager.playerFactionLink.keySet()){
+            if (this.getFactionMembers().contains(uuid)){
+                factionManager.playerFactionLink.remove(uuid);
+            }
+        }
 
-        Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage("§4You have left faction the faction " + this.getFactionName());
+        // Remove EVERY player from the Factions member list
+        for (UUID uuid : this.getFactionMembers()){
+            this.factionMembers.remove(uuid);
+        }
+
+        // Unclaim every claimed land (and weak chunks)
+        for (Chunk chunk : factionManager.linkedChunks.keySet()){
+            if (factionManager.linkedChunks.get(chunk).equals(this)){
+                factionManager.linkedChunks.remove(chunk);
+            }
+        }
+
+        Objects.requireNonNull(Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeam(toTeamName(this.getFactionName()))).unregister();
+
+        // Remove this faction from the factions lists in the FactionManager
+        factionManager.existingFactions.remove(this);
+
+        player.sendMessage("§4You have, as faction owner, disbanded your faction " + this.getFactionName());
 
     }
 
-    // Helper methods
+
+
+    /*
+    FACTION RANK RELATED
+     */
+    public void CreateFactionRank(String rankName){
+        for (FactionRank rank : existingFactionRanks){
+            if (rank.getRankName().equals(rankName)){
+                return;
+            }
+        }
+        existingFactionRanks.add(new FactionRank(rankName));
+        System.out.println("Created the rank " + rankName);
+    }
+
+    public void DeleteFactionRank(String rankName){
+        for (UUID player : factionRank.keySet()){
+            if (factionRank.get(player).getRankName().equals(rankName)){
+                factionRank.remove(player);
+            }
+        }
+        existingFactionRanks.removeIf(rank -> rank.getRankName().equals(rankName));
+        System.out.println("Deleted the rank " + rankName);
+    }
+
+    public void RemovePlayerFromRank(Player player, String rankName){
+        if (factionRank.get(player.getUniqueId()).getRankName().equals(rankName)) {
+            factionRank.remove(player.getUniqueId());
+            System.out.println("Removed player " + player.getName() + " from rank " + rankName);
+        }
+    }
+
+    public void AddPlayerToRank(Player player, String rankName){
+        if (factionRank.containsKey(player.getUniqueId())){
+            player.sendMessage("Player has already a rank ! Remove if first !");
+            return;
+        }
+        for (FactionRank rank : existingFactionRanks){
+            if (rank.getRankName().equals(rankName)){
+                factionRank.put(player.getUniqueId(), rank);
+            }
+        }
+        System.out.println("Added player " + player.getName() + " to rank " + rankName);
+    }
+
+    public void AddPermissionRank(String rankName, ArrayList<String> permission){
+        for (FactionRank rank : factionRank.values()){
+            if (rank.getRankName().equals(rankName)){
+                for (String perm : permission){
+                    rank.addPermission(perm);
+                }
+            }
+        }
+        System.out.println("Added the following permissions to the rank " + rankName + ": " + permission.toString());
+    }
+
+    public void RemovePermissionRank(String rankName, ArrayList<String> permission){
+        for (FactionRank rank : factionRank.values()){
+            if (rank.getRankName().equals(rankName)){
+                for (String perm : permission){
+                    rank.removePermission(perm);
+                }
+            }
+        }
+        System.out.println("Removed the following permissions from the rank " + rankName + ": " + permission.toString());
+    }
+
+
+
+    /*
+    INFORMATION COMMANDS
+     */
+    public String SendFactionInfo(UUID playerUUID) {
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player == null) {
+            System.out.println("The player has no faction");
+            return null;
+        }
+
+        // Send Important information of the Faction to the player for a quick view:
+        return "Here is the information about your faction: §a§l" + this.getFactionName() +
+                "The owner of this faction is : §l" + Objects.requireNonNull(Bukkit.getPlayer(this.getOwner())).getName() +
+                "The faction currently count " + this.getFactionMembers().size() + " members";
+    }
+
+    public String getAllRankInfo(){
+        return "";
+    }
+
+    public String getRankInfo(String rankName){
+        return "";
+    }
+
+    public String SendRankPlayerInfo(String rankName){
+        return "";
+    }
+
+    public String SendRankPermissionsInfo(String RankName){
+        return "";
+    }
+
+
+
+    /*
+    HELPER METHODS
+     */
     private boolean isChunkInLand(Chunk chunkToClaim) {
         World world = Bukkit.getWorld("world");
         if (world == null) return false;
@@ -366,7 +486,7 @@ public class FactionObject {
         return false;
     }
 
-    private void DrawFactionOutsideLine(){
+    private void drawFactionOutsideLine(){
         World world = Bukkit.getWorld("world");
         if (world == null) return;
 
@@ -440,5 +560,50 @@ public class FactionObject {
 
     public boolean isChunkHardClaimed(Chunk chunk) {
         return this.getClaimedChunks().contains(chunk);
+    }
+
+    public void createTabTeam() {
+        Scoreboard scoreboard = Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard();
+
+
+
+        Team newTeam = scoreboard.registerNewTeam(toTeamName(this.getFactionName()));
+        String teamPrefix = useMiniMessage(" [" + this.getFactionName() + "] ");
+        newTeam.setPrefix(teamPrefix);
+
+        Player owner = Bukkit.getPlayer(this.getOwner());
+        if (owner == null) return;
+
+        newTeam.addEntry(owner.getName());
+    }
+
+    private String toTeamName(String factionName) {
+        // This is used to ensure the right format in the team naming (basic characters and 16 characters limit)
+        String base = "f_" + factionName.toLowerCase().replaceAll("[^a-z0-9_]", "");
+        return base.substring(0, Math.min(16, base.length()));
+    }
+
+    private String useLegacyText(String text){
+        final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
+                .character('§')
+                .hexColors()
+                .useUnusualXRepeatedCharacterHexFormat()
+                .build();
+
+        net.kyori.adventure.text.Component parsed = Component.text(text)
+                .color(TextColor.color(100, 100, 100));
+        return LEGACY.serialize(parsed);
+    }
+
+    private String useMiniMessage(String text){
+        final MiniMessage MM = MiniMessage.miniMessage();
+        final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
+                .character('§')
+                .hexColors()
+                .useUnusualXRepeatedCharacterHexFormat()
+                .build();
+
+        Component parsed = MM.deserialize("<gradient:#0434f2:#f21004>" + text + "</gradient>");
+        return LEGACY.serialize(parsed);
     }
 }

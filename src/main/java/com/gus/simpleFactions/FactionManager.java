@@ -30,6 +30,7 @@ public class FactionManager {
         FactionObject newFaction = new FactionObject(plugin, player, factionName, getRandomColor(), plugin.getConfig().getInt("faction.object.base-faction-power"), plugin.getConfig().getInt("faction.object.weak-amount-coefficient"));
         existingFactions.add(newFaction);
         playerFactionLink.put(player, newFaction);
+        newFaction.createTabTeam();
 
         Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage("You have created a new faction: " + factionName + " !");
     }
