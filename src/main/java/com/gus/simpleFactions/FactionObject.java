@@ -102,99 +102,121 @@ public class FactionObject {
     private final MarkerSet markerSet;
     private final Color factionClaimColor;
 
+    public String teamPrefix;
 
     /*
     FACTION RELATED
      */
-    public void InvitePlayer(String invitingPlayer) {
-        Player player = Bukkit.getPlayer(invitingPlayer);
-
-        // Player already has a pending invite for the same faction
-        if (player == null) return;
-        if (factionManager.pendingFactionInvites.contains(new FactionManager.FactionInvite(player.getUniqueId(), this)))
-            return;
-
-        // Invite Plater in the faction
-        factionManager.pendingFactionInvites.add(new FactionManager.FactionInvite(player.getUniqueId(), this));
-
-        player.sendMessage("§4You have been invited to join the faction " + this.getFactionName() + " !");
-    }
-
     public void KickPlayer(UUID playerUUID) {
-        if (playerUUID == null) return;
+        Player player = checkPlayer(playerUUID);
+        if (player == null) {
+            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
+            return;
+        }
 
         // Check if the player is in the faction
-        if (!factionManager.playerFactionLink.containsKey(playerUUID)) return;
-
+        if (!factionMembers.contains(playerUUID) || !factionManager.playerFactionLink.containsKey(playerUUID)) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The player you are trying to kick is not in your faction !");
+            return;
+        }
         // Remove him from the faction, Faction side
-        this.factionMembers.remove(playerUUID);
+        factionMembers.remove(playerUUID);
 
         // Remove him from the faction, Manager side
         factionManager.playerFactionLink.remove(playerUUID);
 
-        Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).sendMessage("§2You have been kicked of the faction: " + this.getFactionName() + " !");
+        player.sendMessage("§2You have been kicked of the faction: " + getFactionName() + " !");
     }
 
     public void TeleportHome(UUID playerUUID) {
-        if (playerUUID == null) return;
+        Player player = checkPlayer(playerUUID);
+        if (player == null) {
+            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
+            return;
+        }
+
+        // There is no home setup yet
+        if (getFactionHome() == null) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You don't have a home set for your faction !\n Set one with /f home set");
+            return;
+        }
 
         // Use a Bukkit Runnable
         plugin.teleportManager.StartTeleport(playerUUID, 5, getFactionHome());
     }
 
     public void SetHome(UUID playerUUID) {
-        Player player = Bukkit.getPlayer(playerUUID);
-        if (player == null) return;
+        Player player = checkPlayer(playerUUID);
+        if (player == null) {
+            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
+            return;
+        }
 
         // Same home set, cancel set home
-        if (player.getLocation().equals(getFactionHome())) return;
+        if (player.getLocation().equals(getFactionHome())) {
+            Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The new home you are trying to set is the same as your current one !");
+            return;
+        }
+
+        // Heck if the wanted home is in the claimed chunks of the faction
+        if (claimedChunks.isEmpty() || !claimedChunks.contains(player.getLocation().getChunk())) {
+            Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The home you are trying to set is not in the claimed chunks of your faction !");
+            return;
+        }
 
         // Remove and set the new Faction home
-        this.factionHome = player.getLocation();
+        factionHome = player.getLocation();
 
         player.sendMessage("§2You have, set the home of your faction !");
     }
 
     public void ClaimLand(UUID playerUUID) {
-        Player player = Bukkit.getPlayer(playerUUID);
-        if (player == null) return;
-
-        Chunk chunkToClaim = player.getLocation().getChunk();
-
-        // Check if the Chunk is faction land (needs to be beside another claimed chunk)
-        if (!claimedChunks.isEmpty() && !isChunkInLand(chunkToClaim)) {
-            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§4You have to claim a chunk beside another claimed chunk !"));
+        Player player = checkPlayer(playerUUID);
+        if (player == null) {
+            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
             return;
         }
 
-        boolean weakClaim = false;
-        if (this.getClaimedChunks().size() < this.getPower()) {
+        Chunk chunkToClaim = player.getLocation().getChunk();
 
-            // Link Chunk to Faction
-            this.getClaimedChunks().add(chunkToClaim);
-
-        } else if (this.getWeakChunks().size() <= this.getMaxWeakChunks()) {
-            if (!plugin.getConfig().getBoolean("faction.object.weak-claims-enabled")) return;
-
-            // Link Raidable Chunk to Faction
-            this.getWeakChunks().add(chunkToClaim);
-            weakClaim = true;
-
-        } else {
-            player.sendMessage("MAX AMOUNT OF CHUNKS REACHED");
+        // Check if the Chunk is in faction land (needs to be beside another claimed chunk)
+        if (!claimedChunks.isEmpty() && !isChunkInLand(chunkToClaim)) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You have to claim a chunk beside another claimed chunk !");
             return;
         }
 
         // Can only claim in the overworld
-        if (!Objects.equals(Bukkit.getWorld("world"), player.getWorld()))
+        if (!Objects.equals(Bukkit.getWorld("world"), player.getWorld())){
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You can only claim land in the overworld !");
             return;
+        }
 
 
         // Check if the player is claiming in a valid area (not already claimed)
         if (factionManager.linkedChunks.containsKey(chunkToClaim)) {
-            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§4The chunk you are trying to claim is already claimed (by your faction or another) !"));
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The chunk you are trying to claim is already claimed (by your faction or another) !");
             return;
         }
+
+        boolean weakClaim = false;
+        if (getClaimedChunks().size() < getPower()) {
+
+            // Link Chunk to Faction
+            getClaimedChunks().add(chunkToClaim);
+
+        } else if (getWeakChunks().size() <= getMaxWeakChunks()) {
+            if (!plugin.getConfig().getBoolean("faction.object.weak-claims-enabled")) return;
+
+            // Link Raidable Chunk to Faction
+            getWeakChunks().add(chunkToClaim);
+            weakClaim = true;
+
+        } else {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "Your faction is out of chunks to claim !");
+            return;
+        }
+
+
 
         // Add Chunk in FactionManager claimedChunkCache (claimed or raidable doesn't matter)
         factionManager.linkedChunks.put(chunkToClaim, this);
@@ -251,41 +273,54 @@ public class FactionObject {
             // Put the new ShapeMarker in the MarkerSet
             markerSet.put("claimedLand " + markerSet.getMarkers().size(), shapeMarker);
 
-            // Redraw all the marker on the map
-            BlueMapAPI.onEnable(api -> {
-                api.getWorld(Bukkit.getWorld("world")).ifPresent(world -> {
-                    for (BlueMapMap map : world.getMaps()) {
-                        map.getMarkerSets().put("my-marker-set-id", markerSet);
-                    }
+            try {
+                // Redraw all the marker on the map
+                BlueMapAPI.onEnable(api -> {
+                    api.getWorld(Bukkit.getWorld("world")).ifPresent(world -> {
+                        for (BlueMapMap map : world.getMaps()) {
+                            map.getMarkerSets().put("my-marker-set-id", markerSet);
+                        }
+                    });
                 });
-            });
+            } catch (Exception e) {
+                plugin.getLogger().severe("BlueMap integration failed: " + e.getMessage());
+
+            }
         }
         drawFactionOutsideLine();
 
-        player.sendMessage("§2You have, claimed this chunk for your faction !");
+        player.sendMessage(ChatColor.GREEN + "You have, claimed this chunk for your faction !");
     }
 
     public void UnClaimLand(UUID playerUUID) {
-        Player player = Bukkit.getPlayer(playerUUID);
-        if (player == null) return;
+        Player player = checkPlayer(playerUUID);
+        if (player == null) {
+            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
+            return;
+        }
 
         Chunk chunkToCheck = player.getLocation().getChunk();
 
         // Can only unclaim in the overworld
-        if (!Objects.equals(Bukkit.getWorld("world"), player.getWorld()))
+        if (!Objects.equals(Bukkit.getWorld("world"), player.getWorld())) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You can only unclaim land in the overworld !");
             return;
+        }
 
         // Check if the player is unclaiming in a valid area (standing on a claimed chunk and claimed by his faction)
-        if (!this.getClaimedChunks().contains(chunkToCheck)) return;
+        if (!getClaimedChunks().contains(chunkToCheck)) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The chunk you are trying to unclaim is not claimed by your faction !");
+            return;
+        }
 
-        // Remove Chunk (record data type) from the FactionManagers claimedChunkCache
+        // Remove Chunk from the FactionManagers claimedChunkCache
         factionManager.linkedChunks.remove(chunkToCheck);
 
         // Change player state
         factionManager.playerInProtectedChunks.put(playerUUID, PlayerChunkState.WILDERNESS);
 
         // Unlink Chunk to Faction
-        this.getClaimedChunks().remove(chunkToCheck);
+        claimedChunks.remove(chunkToCheck);
 
         if (USE_BLUEMAP_ADDON) {
 
@@ -304,15 +339,22 @@ public class FactionObject {
                 });
             });
         }
-        player.sendMessage("§4You have, unclaimed this chunk for your faction !");
+        player.sendMessage(ChatColor.GREEN + "You have, unclaimed this chunk for your faction !");
     }
 
     public void LeaveFaction(UUID playerUUID) {
-        Player player = Bukkit.getPlayer(playerUUID);
-        if (player == null) return;
+        Player player = checkPlayer(playerUUID);
+        if (player == null) {
+            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
+            return;
+        }
 
         // Check if the player is not the Owner of the Faction
-        if (playerUUID.equals(this.getOwner())) return;
+        if (playerUUID.equals(this.getOwner())) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You can't leave your own faction !");
+            return;
+        }
+
 
         // Remove player from FactionManagers FactionPlayerLink ArrayList
         factionManager.playerFactionLink.remove(playerUUID);
@@ -321,27 +363,33 @@ public class FactionObject {
         Objects.requireNonNull(Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeam(toTeamName(this.getFactionName()))).removeEntry(player.getName());
 
         // Remove player from the Factions member list
-        this.factionMembers.remove(playerUUID);
+        factionMembers.remove(playerUUID);
 
-        player.sendMessage("§4You have left faction the faction " + this.getFactionName());
+        player.sendMessage(ChatColor.RED + ChatColor.ITALIC.toString() + "You have left faction the faction " + this.getFactionName());
     }
 
     public void DisbandFaction(UUID playerUUID) {
-        Player player = Bukkit.getPlayer(playerUUID);
-        if (player == null) return;
+        Player player = checkPlayer(playerUUID);
+        if (player == null) {
+            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
+            return;
+        }
 
         // Check if the player is the Owner of the Faction
-        if (!playerUUID.equals(this.getOwner())) return;
+        if (!playerUUID.equals(getOwner())) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You can only disband your faction if you are its owner !");
+            return;
+        }
 
         // Remove EVERY player of the Faction from FactionManagers FactionPlayerLink ArrayList
         for (UUID uuid : factionManager.playerFactionLink.keySet()){
-            if (this.getFactionMembers().contains(uuid)){
+            if (getFactionMembers().contains(uuid)){
                 factionManager.playerFactionLink.remove(uuid);
             }
         }
 
         // Remove EVERY player from the Factions member list
-        for (UUID uuid : this.getFactionMembers()){
+        for (UUID uuid : getFactionMembers()){
             this.factionMembers.remove(uuid);
         }
 
@@ -357,8 +405,7 @@ public class FactionObject {
         // Remove this faction from the factions lists in the FactionManager
         factionManager.existingFactions.remove(this);
 
-        player.sendMessage("§4You have, as faction owner, disbanded your faction " + this.getFactionName());
-
+        player.sendMessage(ChatColor.RED + ChatColor.ITALIC.toString() + "You have, as faction owner, disbanded your faction " + this.getFactionName());
     }
 
 
@@ -366,30 +413,41 @@ public class FactionObject {
     /*
     FACTION RANK RELATED
      */
-    public void CreateFactionRank(String rankName){
+    public void CreateFactionRank(String rankName, Player player){
         for (FactionRank rank : existingFactionRanks){
             if (rank.getRankName().equals(rankName)){
+                player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The rank you are trying to create already exists !");
                 return;
             }
         }
         existingFactionRanks.add(new FactionRank(rankName));
-        System.out.println("Created the rank " + rankName);
     }
 
-    public void DeleteFactionRank(String rankName){
-        for (UUID player : factionRank.keySet()){
-            if (factionRank.get(player).getRankName().equals(rankName)){
-                factionRank.remove(player);
+    public void DeleteFactionRank(String rankName, Player player){
+        if (existingFactionRanks.isEmpty()) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "There is no rank to delete !");
+            return;
+        }
+
+        if (!existingFactionRanks.contains(new FactionRank(rankName))) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The rank you are trying to delete does not exist !");
+            return;
+        }
+
+        for (UUID playerUUID : factionRank.keySet()){
+            if (factionRank.get(playerUUID).getRankName().equals(rankName)){
+                factionRank.remove(playerUUID);
             }
         }
         existingFactionRanks.removeIf(rank -> rank.getRankName().equals(rankName));
-        System.out.println("Deleted the rank " + rankName);
     }
 
     public void RemovePlayerFromRank(Player player, String rankName){
         if (factionRank.get(player.getUniqueId()).getRankName().equals(rankName)) {
             factionRank.remove(player.getUniqueId());
             System.out.println("Removed player " + player.getName() + " from rank " + rankName);
+        } else {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "Player is not in this rank !");
         }
     }
 
@@ -403,29 +461,31 @@ public class FactionObject {
                 factionRank.put(player.getUniqueId(), rank);
             }
         }
-        System.out.println("Added player " + player.getName() + " to rank " + rankName);
+        System.out.println(ChatColor.GREEN + ChatColor.ITALIC.toString() + "Added player " + player.getName() + " to rank " + rankName);
     }
 
-    public void AddPermissionRank(String rankName, ArrayList<String> permission){
-        for (FactionRank rank : factionRank.values()){
-            if (rank.getRankName().equals(rankName)){
-                for (String perm : permission){
+    public void AddPermissionRank(String rankName, ArrayList<String> permission) {
+        for (FactionRank rank : factionRank.values()) {
+            if (rank.getRankName().equals(rankName)) {
+                for (String perm : permission) {
                     rank.addPermission(perm);
                 }
+                System.out.println("Added the following permissions to the rank " + rankName + ": " + permission.toString());
+                return;
             }
         }
-        System.out.println("Added the following permissions to the rank " + rankName + ": " + permission.toString());
     }
 
-    public void RemovePermissionRank(String rankName, ArrayList<String> permission){
-        for (FactionRank rank : factionRank.values()){
-            if (rank.getRankName().equals(rankName)){
-                for (String perm : permission){
+    public void RemovePermissionRank(String rankName, ArrayList<String> permission) {
+        for (FactionRank rank : factionRank.values()) {
+            if (rank.getRankName().equals(rankName)) {
+                for (String perm : permission) {
                     rank.removePermission(perm);
                 }
+                System.out.println("Removed the following permissions from the rank " + rankName + ": " + permission.toString());
+                return;
             }
         }
-        System.out.println("Removed the following permissions from the rank " + rankName + ": " + permission.toString());
     }
 
 
@@ -434,32 +494,130 @@ public class FactionObject {
     INFORMATION COMMANDS
      */
     public String SendFactionInfo(UUID playerUUID) {
-        Player player = Bukkit.getPlayer(playerUUID);
+        Player player = checkPlayer(playerUUID);
         if (player == null) {
-            System.out.println("The player has no faction");
-            return null;
+            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
+            return ChatColor.RED + "Something went wrong when trying to find the player with the UUID: " + playerUUID;
         }
 
-        // Send Important information of the Faction to the player for a quick view:
-        return "Here is the information about your faction: §a§l" + this.getFactionName() +
-                "The owner of this faction is : §l" + Objects.requireNonNull(Bukkit.getPlayer(this.getOwner())).getName() +
-                "The faction currently count " + this.getFactionMembers().size() + " members";
+        // Enhanced with colors, styles, and more details
+        StringBuilder info = new StringBuilder();
+        info.append("§e§l=== Faction Info: §a§l").append(this.getFactionName()).append(" §e§l===\n");
+        info.append("§7Owner: §b§l").append(Objects.requireNonNull(Bukkit.getPlayer(this.getOwner())).getName()).append("\n");
+        info.append("§7Members: §a").append(this.getFactionMembers().size()).append(" §7(total)\n");
+        info.append("§7Power: §6").append(this.getPower()).append(" §7/ Max Weak Chunks: §c").append((int) this.getMaxWeakChunks()).append("\n");
+        info.append("§7Claimed Chunks: §2").append(this.getClaimedChunks().size()).append(" §7(Strong) + §4").append(this.getWeakChunks().size()).append(" §7(Weak)\n");
+        info.append("§7Home: §d").append(this.getFactionHome() != null ? "Set at " + this.getFactionHome().getBlockX() + ", " + this.getFactionHome().getBlockY() + ", " + this.getFactionHome().getBlockZ() : "Not set").append("\n");
+        info.append("§e§l=======================");
+
+        return info.toString();
     }
 
     public String getAllRankInfo(){
-        return "";
+        if (existingFactionRanks.isEmpty()) {
+            return "§cNo ranks exist in this faction.";
+        }
+
+        StringBuilder info = new StringBuilder();
+        info.append("§e§l=== All Ranks in §a§l").append(this.getFactionName()).append(" §e§l===\n");
+        for (FactionRank rank : existingFactionRanks) {
+            int memberCount = 0;
+            for (FactionRank playerRank : factionRank.values()) {
+                if (playerRank.getRankName().equals(rank.getRankName())) {
+                    memberCount++;
+                }
+            }
+            info.append("§b§l").append(rank.getRankName()).append("§7: §a").append(memberCount).append(" members, §6").append(rank.getPermissions().size()).append(" permissions\n");
+        }
+        info.append("§e§l=======================");
+
+        return info.toString();
     }
 
     public String getRankInfo(String rankName){
-        return "";
+        FactionRank targetRank = null;
+        for (FactionRank rank : existingFactionRanks) {
+            if (rank.getRankName().equalsIgnoreCase(rankName)) {
+                targetRank = rank;
+                break;
+            }
+        }
+        if (targetRank == null) {
+            return "§cRank '" + rankName + "' does not exist.";
+        }
+
+        int memberCount = 0;
+        for (FactionRank playerRank : factionRank.values()) {
+            if (playerRank.getRankName().equals(rankName)) {
+                memberCount++;
+            }
+        }
+
+        StringBuilder info = new StringBuilder();
+        info.append("§e§l=== Rank Info: §b§l").append(rankName).append(" §e§l===\n");
+        info.append("§7Members: §a").append(memberCount).append("\n");
+        info.append("§7Permissions: §6").append(targetRank.getPermissions().size()).append("\n");
+        info.append("§e§l=======================");
+
+        return info.toString();
     }
 
     public String SendRankPlayerInfo(String rankName){
-        return "";
+        FactionRank targetRank = null;
+        for (FactionRank rank : existingFactionRanks) {
+            if (rank.getRankName().equalsIgnoreCase(rankName)) {
+                targetRank = rank;
+                break;
+            }
+        }
+        if (targetRank == null) {
+            return "§cRank '" + rankName + "' does not exist.";
+        }
+
+        StringBuilder info = new StringBuilder();
+        info.append("§e§l=== Players in Rank: §b§l").append(rankName).append(" §e§l===\n");
+        boolean hasMembers = false;
+        for (Map.Entry<UUID, FactionRank> entry : factionRank.entrySet()) {
+            if (entry.getValue().getRankName().equals(rankName)) {
+                Player player = Bukkit.getPlayer(entry.getKey());
+                if (player != null) {
+                    info.append("§a- ").append(player.getName()).append("\n");
+                    hasMembers = true;
+                }
+            }
+        }
+        if (!hasMembers) {
+            info.append("§7No players in this rank.\n");
+        }
+        info.append("§e§l=======================");
+
+        return info.toString();
     }
 
-    public String SendRankPermissionsInfo(String RankName){
-        return "";
+    public String SendRankPermissionsInfo(String rankName){
+        FactionRank targetRank = null;
+        for (FactionRank rank : existingFactionRanks) {
+            if (rank.getRankName().equalsIgnoreCase(rankName)) {
+                targetRank = rank;
+                break;
+            }
+        }
+        if (targetRank == null) {
+            return "§cRank '" + rankName + "' does not exist.";
+        }
+
+        StringBuilder info = new StringBuilder();
+        info.append("§e§l=== Permissions for Rank: §b§l").append(rankName).append(" §e§l===\n");
+        if (targetRank.getPermissions().isEmpty()) {
+            info.append("§7No permissions assigned.\n");
+        } else {
+            for (String perm : targetRank.getPermissions()) {
+                info.append("§6- ").append(perm).append("\n");
+            }
+        }
+        info.append("§e§l=======================");
+
+        return info.toString();
     }
 
 
@@ -565,10 +723,8 @@ public class FactionObject {
     public void createTabTeam() {
         Scoreboard scoreboard = Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard();
 
-
-
         Team newTeam = scoreboard.registerNewTeam(toTeamName(this.getFactionName()));
-        String teamPrefix = useMiniMessage(" [" + this.getFactionName() + "] ");
+        String teamPrefix = useMiniMessage(" [" + factionName + "] ", new ArrayList<>(List.of("7f7f7f")));
         newTeam.setPrefix(teamPrefix);
 
         Player owner = Bukkit.getPlayer(this.getOwner());
@@ -590,12 +746,12 @@ public class FactionObject {
                 .useUnusualXRepeatedCharacterHexFormat()
                 .build();
 
-        net.kyori.adventure.text.Component parsed = Component.text(text)
+        Component parsed = Component.text(text)
                 .color(TextColor.color(100, 100, 100));
         return LEGACY.serialize(parsed);
     }
 
-    private String useMiniMessage(String text){
+    private String useMiniMessage(String text, ArrayList<String> colors){
         final MiniMessage MM = MiniMessage.miniMessage();
         final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
                 .character('§')
@@ -603,7 +759,38 @@ public class FactionObject {
                 .useUnusualXRepeatedCharacterHexFormat()
                 .build();
 
-        Component parsed = MM.deserialize("<gradient:#0434f2:#f21004>" + text + "</gradient>");
+        Component parsed;
+        if (colors.size() == 1) {
+            parsed = MM.deserialize("<shadow:#000000FF><b><color:#" + colors.getFirst() + ">" + text + "</color>");
+        } else {
+            StringBuilder colorCode = new StringBuilder();
+            for (String color : colors) colorCode.append(":#").append(color);
+            parsed = MM.deserialize("<shadow:#000000FF><b><gradient" + colorCode + ">" + text + "</gradient>");
+        }
         return LEGACY.serialize(parsed);
+    }
+
+    public void setTeamPrefix(String prefixName, ArrayList<String> colors){
+        Scoreboard scoreboard = Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard();
+        Team team = scoreboard.getTeam(toTeamName(this.getFactionName()));
+        team.setPrefix(useMiniMessage(" [" + prefixName + "] ", colors));
+    }
+
+    private Player checkPlayer(UUID playerUUID) {
+        if (playerUUID == null) {
+            plugin.getLogger().warning("Null UUID passed to checkPlayer");
+            return null;
+        }
+        Player onlinePlayer = Bukkit.getPlayer(playerUUID);
+        if (onlinePlayer != null) {
+            return onlinePlayer;
+        }
+        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerUUID);
+        if (offlinePlayer.hasPlayedBefore()) {
+            return offlinePlayer.getPlayer();  // This might still be null if not loaded
+        } else {
+            plugin.getLogger().warning("Player with UUID " + playerUUID + " has never played on this server.");
+            return null;
+        }
     }
 }

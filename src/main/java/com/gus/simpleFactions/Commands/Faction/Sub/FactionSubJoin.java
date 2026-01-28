@@ -47,6 +47,6 @@ public class FactionSubJoin implements CommandInterface {
         }
 
         if (!player.hasPermission(getPermission())) return;
-        plugin.factionManager.JoinFaction(player.getUniqueId(), args[1]);
+        plugin.factionManager.JoinFaction(player.getUniqueId(), plugin.factionManager.playerFactionLink.get(player.getUniqueId()));
     }
 }

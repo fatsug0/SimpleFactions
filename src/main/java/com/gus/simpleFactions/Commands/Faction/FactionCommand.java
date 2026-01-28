@@ -40,6 +40,7 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
             put("kick", new FactionSubKick(plugin));
             put("leave", new FactionSubLeave(plugin));
             put("unclaim", new FactionSubUnclaim(plugin));
+            put("prefix", new FactionSubPrefix(plugin));
         }};
     }
 
@@ -55,29 +56,24 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
         }
 
         CommandInterface command = this;
-
-        // Check if the first argument is a valid subcommand
-        for (int i = 0; i < args.length - 1; i++) {
-            if (getSubCommands().containsKey(args[i])) {
-                command = command.getSubCommands().get(args[i]);
+        for (String arg : args) {
+            if (command.getSubCommands().containsKey(arg)) {
+                command = command.getSubCommands().get(arg);
             }
         }
-
         command.execute(sender, args);
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, String[] args) {
-        // Need to get the last argument subcommand and return them
-        // Last argument -> args[args.length - 1]
-
-        // Need to transform the last argument (String) into a CommandInterface to get the proper subcommands
-        HashMap<String, CommandInterface> currentSubCommands = getSubCommands();
-        for (int i = 0; i < args.length - 1; i++) {
-            if (!currentSubCommands.containsKey(args[i])) return new ArrayList<>();
-            currentSubCommands = currentSubCommands.get(args[i]).getSubCommands();
+        // Same as the execute command logic, but return the tab completions
+        CommandInterface command = this;
+        for (String arg : args) {
+            if (command.getSubCommands().containsKey(arg)) {
+                command = command.getSubCommands().get(arg);
+            }
         }
 
-        return new ArrayList<>(currentSubCommands.keySet());
+        return new ArrayList<>(command.getSubCommands().keySet());
     }
 }

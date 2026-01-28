@@ -166,19 +166,6 @@ public class MainEventListener implements Listener {
             scoreboard.getTeams().forEach(t -> t.removeEntry(e.getPlayer().getName()));
             Objects.requireNonNull(scoreboard.getTeam("faction" + plugin.factionManager.playerFactionLink.get(e.getPlayer().getUniqueId()).getFactionName())).addEntry(e.getPlayer().getName());
         }
-
-    }
-
-    private Component useMiniMessage(String text){
-        final MiniMessage MM = MiniMessage.miniMessage();
-        final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
-                .character('§')
-                .hexColors()
-                .useUnusualXRepeatedCharacterHexFormat()
-                .build();
-
-        Component parsed = MM.deserialize("<shadow:#000000FF><b>" + text);
-        return parsed;
     }
 
     @EventHandler

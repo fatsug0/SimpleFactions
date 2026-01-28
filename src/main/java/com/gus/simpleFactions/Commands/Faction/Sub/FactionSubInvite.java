@@ -2,10 +2,12 @@ package com.gus.simpleFactions.Commands.Faction.Sub;
 
 import com.gus.simpleFactions.Commands.Builders.CommandInterface;
 import com.gus.simpleFactions.SimpleFactions;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
+import java.util.Objects;
 
 public class FactionSubInvite implements CommandInterface {
 
@@ -47,6 +49,6 @@ public class FactionSubInvite implements CommandInterface {
         }
 
         if (!player.hasPermission(getPermission())) return;
-        plugin.factionManager.playerFactionLink.get(player.getUniqueId()).InvitePlayer(args[1]);
+        plugin.factionManager.InvitePlayer(Objects.requireNonNull(Bukkit.getPlayer(args[1])).getUniqueId(), plugin.factionManager.playerFactionLink.get(player.getUniqueId()));
     }
 }
