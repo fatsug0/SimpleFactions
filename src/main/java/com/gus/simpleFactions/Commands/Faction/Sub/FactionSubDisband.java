@@ -21,7 +21,12 @@ public class FactionSubDisband implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the disband faction command";
+        return """
+                This is the disband faction command
+                You can disband your faction if you are the owner of it
+                It will delete all the land in your territory and delete your faction
+                It will also make all the members of your faction, factionless
+                Use carefully as this cannot be undone""";
     }
 
     @Override

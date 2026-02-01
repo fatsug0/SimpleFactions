@@ -21,12 +21,15 @@ public class FactionSubRankManage implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the rank manage command";
+        return """
+                This is the rank manage command
+                You can manage the permissions and players for a rank
+                You can also view the info for a rank""";
     }
 
     @Override
     public String getPermission() {
-        return "simpleFactions.rank.manage";
+        return null;
     }
 
     @Override

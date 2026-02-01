@@ -21,12 +21,14 @@ public class FactionSubHelp implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the help command for factions";
+        return """
+                This is the help command for factions
+                If your are lost and doesn't know what to do, this is the command for you!""";
     }
 
     @Override
     public String getPermission() {
-        return "simplefactions.help";
+        return null;
     }
 
     @Override
@@ -46,7 +48,7 @@ public class FactionSubHelp implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         plugin.factionManager.SendHelp(player.getUniqueId());
     }
 }

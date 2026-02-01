@@ -23,12 +23,14 @@ public class FactionSubRankManagePlayerAdd implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the rank manage player add command";
+        return """
+                This is the rank manage player add command
+                You can add a player to a rank""";
     }
 
     @Override
     public String getPermission() {
-        return "simpleFactions.rank.manage.player.add";
+        return "simplefactions.rank.manage.player.add";
     }
 
     @Override
@@ -48,7 +50,7 @@ public class FactionSubRankManagePlayerAdd implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         plugin.factionManager.playerFactionLink.get(player.getUniqueId()).AddPlayerToRank(Objects.requireNonNull(Bukkit.getPlayer(args[5])), args[4]);
     }
 }

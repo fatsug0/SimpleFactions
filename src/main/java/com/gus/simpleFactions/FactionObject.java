@@ -2,6 +2,7 @@ package com.gus.simpleFactions;
 
 import com.flowpowered.math.vector.Vector2d;
 import com.flowpowered.math.vector.Vector3d;
+import com.gus.simpleFactions.Enums.PlayerChunkState;
 import de.bluecolored.bluemap.api.BlueMapAPI;
 import de.bluecolored.bluemap.api.BlueMapMap;
 import de.bluecolored.bluemap.api.markers.LineMarker;
@@ -14,8 +15,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
@@ -78,10 +77,7 @@ public class FactionObject {
     }
 
     private ArrayList<FactionRank> existingFactionRanks = new ArrayList<>();
-    private Map<UUID, FactionRank> factionRank = new HashMap<>();
-    public Map<UUID, FactionRank> getFactionRank() {
-        return this.factionRank;
-    }
+    public Map<UUID, FactionRank> factionRanks = new HashMap<>();
 
     private int power;
     public int getPower() {
@@ -413,8 +409,9 @@ public class FactionObject {
     /*
     FACTION RANK RELATED
      */
+    // Create & Delete Rank
     public void CreateFactionRank(String rankName, Player player){
-        for (FactionRank rank : existingFactionRanks){
+        for (FactionRank rank : factionRanks.values()){
             if (rank.getRankName().equals(rankName)){
                 player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The rank you are trying to create already exists !");
                 return;
@@ -422,7 +419,6 @@ public class FactionObject {
         }
         existingFactionRanks.add(new FactionRank(rankName));
     }
-
     public void DeleteFactionRank(String rankName, Player player){
         if (existingFactionRanks.isEmpty()) {
             player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "There is no rank to delete !");
@@ -434,38 +430,53 @@ public class FactionObject {
             return;
         }
 
-        for (UUID playerUUID : factionRank.keySet()){
-            if (factionRank.get(playerUUID).getRankName().equals(rankName)){
-                factionRank.remove(playerUUID);
+        for (UUID playerUUID : factionRanks.keySet()){
+            if (factionRanks.get(playerUUID).getRankName().equals(rankName)){
+                factionRanks.remove(playerUUID);
+
+                // Remove his perms
+                if (checkPlayer(playerUUID) == null) return;
+                plugin.permissionManager.RemovePerm(checkPlayer(playerUUID), factionRanks.get(playerUUID).getPermissions());
             }
         }
+
         existingFactionRanks.removeIf(rank -> rank.getRankName().equals(rankName));
     }
 
+    // Add & Remove Player to Rank
     public void RemovePlayerFromRank(Player player, String rankName){
-        if (factionRank.get(player.getUniqueId()).getRankName().equals(rankName)) {
-            factionRank.remove(player.getUniqueId());
-            System.out.println("Removed player " + player.getName() + " from rank " + rankName);
-        } else {
-            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "Player is not in this rank !");
+        if (!factionRanks.containsKey(player.getUniqueId())){
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "Player has no a rank ! Cant remove him from it !");
+            return;
         }
-    }
 
+        for (FactionRank rank : existingFactionRanks){
+            if (rank.getRankName().equals(rankName)){
+                factionRanks.remove(player.getUniqueId(), rank);
+                plugin.permissionManager.RemovePerm(player, rank.getPermissions());
+            }
+        }
+        System.out.println(ChatColor.GREEN + ChatColor.ITALIC.toString() + "Added player " + player.getName() + " to rank " + rankName);
+        System.out.println(player.getName() + " now has the following permissions: " + player.getEffectivePermissions().toString());
+    }
     public void AddPlayerToRank(Player player, String rankName){
-        if (factionRank.containsKey(player.getUniqueId())){
-            player.sendMessage("Player has already a rank ! Remove if first !");
+        if (factionRanks.containsKey(player.getUniqueId())){
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "Player has already a rank ! Remove it first !");
             return;
         }
         for (FactionRank rank : existingFactionRanks){
             if (rank.getRankName().equals(rankName)){
-                factionRank.put(player.getUniqueId(), rank);
+                factionRanks.put(player.getUniqueId(), rank);
+                plugin.permissionManager.AddPerm(player, rank.getPermissions());
             }
         }
         System.out.println(ChatColor.GREEN + ChatColor.ITALIC.toString() + "Added player " + player.getName() + " to rank " + rankName);
+        System.out.println(player.getName() + " now has the following permissions: " + player.getEffectivePermissions().toString());
     }
 
+    // Add & Remove permission from rank
     public void AddPermissionRank(String rankName, ArrayList<String> permission) {
-        for (FactionRank rank : factionRank.values()) {
+        for (FactionRank rank : factionRanks.values()) {
             if (rank.getRankName().equals(rankName)) {
                 for (String perm : permission) {
                     rank.addPermission(perm);
@@ -475,9 +486,8 @@ public class FactionObject {
             }
         }
     }
-
     public void RemovePermissionRank(String rankName, ArrayList<String> permission) {
-        for (FactionRank rank : factionRank.values()) {
+        for (FactionRank rank : factionRanks.values()) {
             if (rank.getRankName().equals(rankName)) {
                 for (String perm : permission) {
                     rank.removePermission(perm);
@@ -522,7 +532,7 @@ public class FactionObject {
         info.append("§e§l=== All Ranks in §a§l").append(this.getFactionName()).append(" §e§l===\n");
         for (FactionRank rank : existingFactionRanks) {
             int memberCount = 0;
-            for (FactionRank playerRank : factionRank.values()) {
+            for (FactionRank playerRank : factionRanks.values()) {
                 if (playerRank.getRankName().equals(rank.getRankName())) {
                     memberCount++;
                 }
@@ -547,7 +557,7 @@ public class FactionObject {
         }
 
         int memberCount = 0;
-        for (FactionRank playerRank : factionRank.values()) {
+        for (FactionRank playerRank : factionRanks.values()) {
             if (playerRank.getRankName().equals(rankName)) {
                 memberCount++;
             }
@@ -577,7 +587,7 @@ public class FactionObject {
         StringBuilder info = new StringBuilder();
         info.append("§e§l=== Players in Rank: §b§l").append(rankName).append(" §e§l===\n");
         boolean hasMembers = false;
-        for (Map.Entry<UUID, FactionRank> entry : factionRank.entrySet()) {
+        for (Map.Entry<UUID, FactionRank> entry : factionRanks.entrySet()) {
             if (entry.getValue().getRankName().equals(rankName)) {
                 Player player = Bukkit.getPlayer(entry.getKey());
                 if (player != null) {

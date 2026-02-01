@@ -21,7 +21,9 @@ public class FactionSubRankDelete implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "this is the rank delete command";
+        return """
+                This is the rank delete command
+                You can delete a rank for your faction""";
     }
 
     @Override
@@ -46,7 +48,7 @@ public class FactionSubRankDelete implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
-        plugin.factionManager.playerFactionLink.get(player.getUniqueId()).DeleteFactionRank(args[2]);
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
+        plugin.factionManager.playerFactionLink.get(player.getUniqueId()).DeleteFactionRank(args[2], player);
     }
 }

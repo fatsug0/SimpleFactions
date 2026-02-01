@@ -24,9 +24,12 @@ public class FactionSubPrefix implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the faction prefix command\n " +
-                "First write the prefix, then colors" +
-                "if there is more than one color, a gradient will be created (max 5 colors)";
+        return """
+                This is the prefix command
+                You can set the prefix for your faction
+                Also the color of the prefix, use one color for a solid color
+                You can also create a gradient prefix with two to five different colors
+                """;
     }
 
     @Override
@@ -51,7 +54,7 @@ public class FactionSubPrefix implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
 
         FactionObject faction = plugin.factionManager.playerFactionLink.get(player.getUniqueId());
         faction.setTeamPrefix(args[1], new ArrayList<>(Arrays.asList(args).subList(2, args.length)));

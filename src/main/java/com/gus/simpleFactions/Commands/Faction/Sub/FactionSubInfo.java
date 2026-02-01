@@ -21,12 +21,14 @@ public class FactionSubInfo implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the info command for factions";
+        return """
+                This is the info command for factions
+                You can get all important info about your faction""";
     }
 
     @Override
     public String getPermission() {
-        return "simplefactions.info";
+        return null;
     }
 
     @Override
@@ -46,7 +48,7 @@ public class FactionSubInfo implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         player.sendMessage(plugin.factionManager.playerFactionLink.get(player.getUniqueId()).SendFactionInfo(player.getUniqueId()));
     }
 }

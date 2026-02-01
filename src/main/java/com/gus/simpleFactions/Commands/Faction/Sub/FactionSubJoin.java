@@ -21,12 +21,15 @@ public class FactionSubJoin implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the join command";
+        return """
+                This is the join command
+                If you are invited, you can join the faction you were invited to
+                You have to leave your current faction before joining another one""";
     }
 
     @Override
     public String getPermission() {
-        return "simplefactions.join";
+        return null;
     }
 
     @Override
@@ -46,7 +49,7 @@ public class FactionSubJoin implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         plugin.factionManager.JoinFaction(player.getUniqueId(), plugin.factionManager.playerFactionLink.get(player.getUniqueId()));
     }
 }

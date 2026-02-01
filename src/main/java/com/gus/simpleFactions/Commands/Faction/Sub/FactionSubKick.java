@@ -23,7 +23,9 @@ public class FactionSubKick implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the kick command";
+        return """
+                This is the kick command
+                You can kick a player from your faction""";
     }
 
     @Override
@@ -48,7 +50,7 @@ public class FactionSubKick implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         plugin.factionManager.playerFactionLink.get(player.getUniqueId()).KickPlayer(Objects.requireNonNull(Bukkit.getPlayer(args[1])).getUniqueId());
     }
 }

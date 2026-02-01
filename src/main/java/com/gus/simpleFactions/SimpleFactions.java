@@ -11,6 +11,7 @@ public final class SimpleFactions extends JavaPlugin {
 
     public FactionManager factionManager;
     public TeleportManager teleportManager;
+    public PermissionManager permissionManager;
 
     @Override
     public void onEnable() {
@@ -19,6 +20,7 @@ public final class SimpleFactions extends JavaPlugin {
 
         factionManager = new FactionManager(this);
         teleportManager = new TeleportManager(this);
+        permissionManager = new PermissionManager(this);
 
         Bukkit.getPluginManager().registerEvents(new MainEventListener(this), this);
 
@@ -26,6 +28,7 @@ public final class SimpleFactions extends JavaPlugin {
 
         StartUpBanner();
 
+        // For debug purposes, erase all teams on startup
         for (Team team : Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeams()) {
             team.unregister();
         }
@@ -33,6 +36,8 @@ public final class SimpleFactions extends JavaPlugin {
 
     @Override
     public void onDisable() {
+
+        // For debug purposes, erase all teams on shutdown
         for (Team team : Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeams()) {
             team.unregister();
         }

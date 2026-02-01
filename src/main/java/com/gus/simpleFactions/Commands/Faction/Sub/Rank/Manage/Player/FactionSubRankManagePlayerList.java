@@ -22,12 +22,14 @@ public class FactionSubRankManagePlayerList implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the rank manage player list command";
+        return """
+                This is the rank manage player list command
+                You can list all the players for a rank""";
     }
 
     @Override
     public String getPermission() {
-        return "simpleFactions.rank.manage.player.list";
+        return "simplefactions.rank.manage.player.list";
     }
 
     @Override
@@ -47,7 +49,7 @@ public class FactionSubRankManagePlayerList implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         player.sendMessage(plugin.factionManager.playerFactionLink.get(player.getUniqueId()).SendRankPlayerInfo(args[4]));
     }
 }

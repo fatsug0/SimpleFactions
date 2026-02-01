@@ -1,11 +1,6 @@
 package com.gus.simpleFactions;
 
-import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.Style;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import com.gus.simpleFactions.Enums.PlayerChunkState;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -22,9 +17,9 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.server.ServerLoadEvent;
-import org.bukkit.scoreboard.Team;
 
-import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -166,6 +161,13 @@ public class MainEventListener implements Listener {
             scoreboard.getTeams().forEach(t -> t.removeEntry(e.getPlayer().getName()));
             Objects.requireNonNull(scoreboard.getTeam("faction" + plugin.factionManager.playerFactionLink.get(e.getPlayer().getUniqueId()).getFactionName())).addEntry(e.getPlayer().getName());
         }
+
+        // Check if the player has all the basic permission that every player should have
+        if (!e.getPlayer().hasPermission("simplefactions")){
+            plugin.permissionManager.AddPerm(e.getPlayer(), new ArrayList<>(List.of("simplefactions")));
+        }
+
+        System.out.println(e.getPlayer().hasPermission("simplefactions"));
     }
 
     @EventHandler

@@ -26,7 +26,7 @@ public class FactionSubHomeSet implements CommandInterface {
 
     @Override
     public String getPermission() {
-        return "simpleFactions.home.set";
+        return "simplefactions.home.set";
     }
 
     @Override

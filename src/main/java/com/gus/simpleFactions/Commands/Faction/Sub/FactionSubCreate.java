@@ -22,12 +22,16 @@ public class FactionSubCreate implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the create faction command";
+        return """
+                This is the create faction command
+                You can create a faction for yourself
+                You will automatically be the leader of the faction with full power
+                You can now claim land, invite other players and more!""";
     }
 
     @Override
     public String getPermission() {
-        return "simplefactions.create";
+        return null;
     }
 
     @Override
@@ -48,7 +52,8 @@ public class FactionSubCreate implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
+
         plugin.factionManager.CreateFaction(player.getUniqueId(), args[1]);
     }
 }

@@ -20,12 +20,15 @@ public class FactionSubRankManagePlayer implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the rank manage player command";
+        return """
+                This is the rank manage player command
+                You can add, remove a or more players for a rank
+                You can also list all the players for a rank""";
     }
 
     @Override
     public String getPermission() {
-        return "simpleFactions.rank.manage.player";
+        return null;
     }
 
     @Override

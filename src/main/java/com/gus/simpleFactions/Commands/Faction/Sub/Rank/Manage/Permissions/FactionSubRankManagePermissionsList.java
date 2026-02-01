@@ -21,12 +21,14 @@ public class FactionSubRankManagePermissionsList implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the rank manage permissions list command";
+        return """
+                This is the rank manage permissions list command
+                You can list all the permissions for a rank""";
     }
 
     @Override
     public String getPermission() {
-        return "simpleFactions.rank.manage.permissions.list";
+        return "simplefactions.rank.manage.permissions.list";
     }
 
     @Override
@@ -46,7 +48,7 @@ public class FactionSubRankManagePermissionsList implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         sender.sendMessage(plugin.factionManager.playerFactionLink.get(player.getUniqueId()).SendRankPermissionsInfo(args[4]));
     }
 }

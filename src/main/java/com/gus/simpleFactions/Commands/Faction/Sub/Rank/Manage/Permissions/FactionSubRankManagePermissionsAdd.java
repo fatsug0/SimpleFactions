@@ -22,12 +22,15 @@ public class FactionSubRankManagePermissionsAdd implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the rank manage permissions add command";
+        return """
+                This is the rank manage permissions add command
+                You can add a or more permissions for a rank
+                The added permissions will be added to all players in the faction from that rank""";
     }
 
     @Override
     public String getPermission() {
-        return "simpleFactions.rank.manage.permissions.add";
+        return "simplefactions.rank.manage.permissions.add";
     }
 
     @Override
@@ -52,7 +55,7 @@ public class FactionSubRankManagePermissionsAdd implements CommandInterface {
             permissions.add(args[i]);
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         plugin.factionManager.playerFactionLink.get(player.getUniqueId()).AddPermissionRank(args[4], permissions);
     }
 }

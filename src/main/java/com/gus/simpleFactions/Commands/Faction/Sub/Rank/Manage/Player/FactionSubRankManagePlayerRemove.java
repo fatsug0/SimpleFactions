@@ -22,12 +22,14 @@ public class FactionSubRankManagePlayerRemove implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the rank manage player remove command";
+        return """
+                This is the rank manage player remove command
+                You can remove a player from a rank""";
     }
 
     @Override
     public String getPermission() {
-        return "simpleFactions.rank.manage.player.remove";
+        return "simplefactions.rank.manage.player.remove";
     }
 
     @Override
@@ -47,7 +49,7 @@ public class FactionSubRankManagePlayerRemove implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         plugin.factionManager.playerFactionLink.get(player.getUniqueId()).RemovePlayerFromRank(Objects.requireNonNull(Bukkit.getPlayer(args[4])), args[1]);
     }
 }

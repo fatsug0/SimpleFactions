@@ -1,4 +1,4 @@
-package com.gus.simpleFactions;
+package com.gus.simpleFactions.Enums;
 
 public enum PlayerChunkState {
     WILDERNESS,

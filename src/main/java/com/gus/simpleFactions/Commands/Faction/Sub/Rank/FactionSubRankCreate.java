@@ -21,7 +21,9 @@ public class FactionSubRankCreate implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the rank create command";
+        return """
+                This is the rank create command
+                You can create a rank for your faction""";
     }
 
     @Override
@@ -46,7 +48,7 @@ public class FactionSubRankCreate implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
-        plugin.factionManager.playerFactionLink.get(player.getUniqueId()).CreateFactionRank(args[2]);
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
+        plugin.factionManager.playerFactionLink.get(player.getUniqueId()).CreateFactionRank(args[2], player);
     }
 }

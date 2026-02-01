@@ -21,12 +21,14 @@ public class FactionSubLeave implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the leave command";
+        return """
+                This is the leave command
+                You can leave your current faction""";
     }
 
     @Override
     public String getPermission() {
-        return "simplefactions.leave";
+        return null;
     }
 
     @Override
@@ -46,7 +48,7 @@ public class FactionSubLeave implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         plugin.factionManager.playerFactionLink.get(player.getUniqueId()).LeaveFaction(player.getUniqueId());
     }
 

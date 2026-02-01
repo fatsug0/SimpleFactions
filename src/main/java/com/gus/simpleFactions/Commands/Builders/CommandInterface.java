@@ -17,16 +17,12 @@ public interface CommandInterface {
     void execute(CommandSender sender, String[] args);
 
     default String sendUsageError(){
-        return ChatColor.RED + ChatColor.BOLD.toString() +  "You used the command incorrectly!\n" +
+        return ChatColor.RED + ChatColor.BOLD.toString() +  "You used the command " + ChatColor.ITALIC + getName() + ChatColor.RESET + ChatColor.RED + ChatColor.BOLD + " incorrectly!\n" + ChatColor.RESET +
+                ChatColor.BOLD + " ===== \n" + ChatColor.RESET +
+                getDescription() + "\n" + ChatColor.RESET +
+                ChatColor.BOLD + " ===== \n" + ChatColor.RESET +
+                "Permission: " + ChatColor.DARK_PURPLE + getPermission() + "\n" + ChatColor.RESET +
+                ChatColor.BOLD + " ===== \n" + ChatColor.RESET +
                 ChatColor.GRAY + ChatColor.ITALIC + "Usage: " + getUsage();
-    }
-
-    default List<String> sendSubCommands(HashMap<String, CommandInterface> subCommands){
-        if (subCommands == null){return null;}
-        List<String> subCommandNames = new ArrayList<>();
-        for (CommandInterface subCommand : subCommands.values()){
-            subCommandNames.add(subCommand.getName());
-        }
-        return subCommandNames;
     }
 }

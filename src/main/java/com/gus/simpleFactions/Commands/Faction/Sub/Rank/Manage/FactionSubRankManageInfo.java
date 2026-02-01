@@ -20,12 +20,14 @@ public class FactionSubRankManageInfo implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the rank manage info command";
+        return """
+                This is the rank manage info command
+                You can get all important info about a rank""";
     }
 
     @Override
     public String getPermission() {
-        return "simplefactions.rank.manage.info";
+        return null;
     }
 
     @Override
@@ -45,7 +47,7 @@ public class FactionSubRankManageInfo implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         player.sendMessage(plugin.factionManager.playerFactionLink.get(player.getUniqueId()).getRankInfo(args[3]));
     }
 }

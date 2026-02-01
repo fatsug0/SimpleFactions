@@ -21,7 +21,9 @@ public class FactionSubUnclaim implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the unclaim land command";
+        return """
+                This is the unclaim land command
+                You can unclaim land your faction owns""";
     }
 
     @Override
@@ -46,7 +48,7 @@ public class FactionSubUnclaim implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         plugin.factionManager.playerFactionLink.get(player.getUniqueId()).UnClaimLand(player.getUniqueId());
     }
 }

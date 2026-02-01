@@ -21,12 +21,15 @@ public class FactionSubRank implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the rank command";
+        return """
+                This is the rank command
+                You can create, delete, list, manage ranks for your faction
+                You can also view the info for all the faction ranks""";
     }
 
     @Override
     public String getPermission() {
-        return "simplefactions.rank";
+        return null;
     }
 
     @Override

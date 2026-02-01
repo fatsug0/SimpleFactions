@@ -21,7 +21,11 @@ public class FactionSubClaim implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the claim land command";
+        return """
+                This is the claim land command
+                You can claim land for your faction
+                You can only claim land if you are beside your faction territory
+                It will claim the current chunk you are standing in""";
     }
 
     @Override
@@ -46,7 +50,7 @@ public class FactionSubClaim implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         plugin.factionManager.playerFactionLink.get(player.getUniqueId()).ClaimLand(player.getUniqueId());
     }
 }

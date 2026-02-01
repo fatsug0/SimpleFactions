@@ -20,12 +20,15 @@ public class FactionSubRankManagePermissions implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the rank manage permissions command";
+        return """
+                This is the rank manage permissions command
+                You can add, remove a or more permissions for a rank
+                You can also list all the permissions for a rank""";
     }
 
     @Override
     public String getPermission() {
-        return "simplefactions.rank.manage.permissions";
+        return null;
     }
 
     @Override

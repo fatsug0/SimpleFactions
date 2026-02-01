@@ -23,12 +23,15 @@ public class FactionSubInvite implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the invite command";
+        return """
+                This is the invite command
+                You can invite players to your faction
+                After invite, the player in question will have to accept your invitation to join""";
     }
 
     @Override
     public String getPermission() {
-        return "simpleFactions.invite";
+        return "simplefactions.invite";
     }
 
     @Override
@@ -48,7 +51,7 @@ public class FactionSubInvite implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
-        plugin.factionManager.InvitePlayer(Objects.requireNonNull(Bukkit.getPlayer(args[1])).getUniqueId(), plugin.factionManager.playerFactionLink.get(player.getUniqueId()));
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
+        plugin.factionManager.InvitePlayer(player.getUniqueId(), Objects.requireNonNull(Bukkit.getPlayer(args[1])).getUniqueId(), plugin.factionManager.playerFactionLink.get(player.getUniqueId()));
     }
 }

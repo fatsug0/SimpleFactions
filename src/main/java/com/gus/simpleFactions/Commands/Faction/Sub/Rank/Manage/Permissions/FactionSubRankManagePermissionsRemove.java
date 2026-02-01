@@ -22,12 +22,15 @@ public class FactionSubRankManagePermissionsRemove implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the rank manage permissions remove command";
+        return """
+                This is the rank manage permissions remove command
+                You can remove a permission for a rank
+                The removed permission will be removed from all players in the faction from that rank""";
     }
 
     @Override
     public String getPermission() {
-        return "simpleFactions.rank.manage.permissions.remove";
+        return "simplefactions.rank.manage.permissions.remove";
     }
 
     @Override
@@ -52,7 +55,7 @@ public class FactionSubRankManagePermissionsRemove implements CommandInterface {
             permissions.add(args[i]);
         }
 
-        if (!player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         plugin.factionManager.playerFactionLink.get(player.getUniqueId()).RemovePermissionRank(args[4], permissions);
     }
 }
