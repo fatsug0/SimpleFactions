@@ -1,6 +1,7 @@
 package com.gus.simpleFactions;
 
 import com.gus.simpleFactions.Enums.PlayerChunkState;
+import com.gus.simpleFactions.Enums.RaidState;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -17,11 +18,9 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.server.ServerLoadEvent;
+import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 public class MainEventListener implements Listener {
 
@@ -57,6 +56,22 @@ public class MainEventListener implements Listener {
                 e.setCancelled(true);
             }
         }
+
+        //region Raid End Check
+        for (RaidInforObject raidInforObject : plugin.raidManager.currentRaids.get(chunkFaction)){
+            if (raidInforObject.getRaidState() != RaidState.CAPTURE_FLAG) {
+                e.setCancelled(true);
+                return;
+            }
+
+            ItemStack item = new ItemStack(e.getBlock().getType(), 1, e.getBlock().getData());
+            if (raidInforObject.getRaidCore().equals(item)) {
+                // Core has been destroyed, end the raid
+                raidInforObject.setRaidState(RaidState.END);
+                plugin.raidManager.EndRaid(raidInforObject, chunkFaction);
+            }
+        }
+        //endregion
     }
 
     @EventHandler
@@ -79,7 +94,23 @@ public class MainEventListener implements Listener {
                 e.setCancelled(true);
             }
         }
+
+        //region Raid Start Check
+        for (RaidInforObject raidInforObject : plugin.raidManager.currentRaids.get(chunkFaction)){
+            if (raidInforObject.getRaidState() != RaidState.START) {
+                e.setCancelled(true);
+                return;
+            }
+
+            ItemStack item = new ItemStack(e.getBlock().getType(), 1, e.getBlock().getData());
+            if (raidInforObject.getRaidCore().equals(item)) {
+                // Core has been destroyed, end the raid
+                raidInforObject.setRaidState(RaidState.GROUNDS);
+            }
+        }
+        //endregion
     }
+
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e){

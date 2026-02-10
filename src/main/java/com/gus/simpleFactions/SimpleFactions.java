@@ -12,6 +12,7 @@ public final class SimpleFactions extends JavaPlugin {
     public FactionManager factionManager;
     public TeleportManager teleportManager;
     public PermissionManager permissionManager;
+    public RaidManager raidManager;
 
     @Override
     public void onEnable() {
@@ -21,6 +22,7 @@ public final class SimpleFactions extends JavaPlugin {
         factionManager = new FactionManager(this);
         teleportManager = new TeleportManager(this);
         permissionManager = new PermissionManager(this);
+        raidManager = new RaidManager(this);
 
         Bukkit.getPluginManager().registerEvents(new MainEventListener(this), this);
 
