@@ -1,6 +1,11 @@
 package com.gus.simpleFactions;
 
 import com.gus.simpleFactions.Commands.Faction.FactionCommand;
+import com.gus.simpleFactions.FactionHandlers.FactionManager;
+import com.gus.simpleFactions.Miscellaneous.MainEventListener;
+import com.gus.simpleFactions.Miscellaneous.PermissionManager;
+import com.gus.simpleFactions.Miscellaneous.TeleportManager;
+import com.gus.simpleFactions.RaidHandlers.RaidManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Team;
@@ -26,6 +31,8 @@ public final class SimpleFactions extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new MainEventListener(this), this);
 
+        System.out.println(getConfig().getBoolean("enable-bluemap-addon") ? "[+] BlueMap addon enabled !" : "[-] BlueMap addon disabled !");
+
         InitiateCommands();
 
         StartUpBanner();
@@ -34,6 +41,9 @@ public final class SimpleFactions extends JavaPlugin {
         for (Team team : Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeams()) {
             team.unregister();
         }
+
+        raidManager.StartCheckForWaitingRaids();
+
     }
 
     @Override
@@ -43,6 +53,8 @@ public final class SimpleFactions extends JavaPlugin {
         for (Team team : Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeams()) {
             team.unregister();
         }
+
+        raidManager.task.cancel();
     }
 
     private void InitiateCommands(){

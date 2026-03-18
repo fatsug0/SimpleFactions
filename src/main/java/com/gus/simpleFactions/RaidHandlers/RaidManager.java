@@ -1,6 +1,8 @@
-package com.gus.simpleFactions;
+package com.gus.simpleFactions.RaidHandlers;
 
 import com.gus.simpleFactions.Enums.RaidState;
+import com.gus.simpleFactions.FactionHandlers.FactionObject;
+import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -8,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 
@@ -18,34 +21,43 @@ public class RaidManager {
         this.plugin = plugin;
     }
 
-    public HashMap<FactionObject, ArrayList<RaidInforObject>> currentRaids = new HashMap<>();
+    public HashMap<FactionObject, ArrayList<RaidInfoObject>> waitingRaids = new HashMap<>();
+    public HashMap<FactionObject, ArrayList<RaidInfoObject>> currentRaids = new HashMap<>();
 
     private final int TIME_FOR_PREP_PHASE = 120 * 20;
     private final int TIME_FOR_HOLD_GROUNDS_PHASE = 120 * 20;
     private final int TIME_DURING_HOLD_GROUNDS_PHASE = 60 * 20;
     private final int TIME_FOR_CTF_PHASE = 120 * 20;
 
-    public void SendRaidDeclaration(FactionObject attackingFaction, ArrayList<Chunk> attackedChunks, FactionObject defendingFaction, String raidDate){
-        for (RaidInforObject raidInfo : currentRaids.get(defendingFaction)) {
+    public BukkitTask task;
+
+    public boolean SendRaidDeclaration(Player sender, ArrayList<Chunk> attackedChunks, FactionObject defendingFaction, String raidDate) {
+        for (RaidInfoObject raidInfo : currentRaids.get(defendingFaction)) {
 
             // Check if the defending faction doesn't already have a raid going on this date
             if (dateToCalendar(raidDate) != null && raidInfo.getRaidDate().get(Calendar.DAY_OF_YEAR) == (dateToCalendar(raidDate).get(Calendar.DAY_OF_YEAR))) {
                 // RAID CANT HAPPEN
+                sender.sendMessage(ChatColor.RED + "This faction is already being attacked at this date !\n Change it !");
+                return false;
             }
         }
 
         // Check if the attacked chunks are in a WEAK state
         for (Chunk chunk : attackedChunks) {
-            if (!attackingFaction.getClaimedChunks().contains(chunk)) {
+            if (!plugin.factionManager.playerFactionLink.get(sender.getUniqueId()).getClaimedChunks().contains(chunk)) {
                 // RAID CANT HAPPEN
+                sender.sendMessage(ChatColor.RED + "The selected chunks are not in a weak state !");
+                return false;
             }
         }
 
-        addRaidToFaction(defendingFaction, new RaidInforObject(RaidState.WAITING, dateToCalendar(raidDate), attackingFaction, attackedChunks));
+        addRaidToFaction(defendingFaction, new RaidInfoObject(RaidState.WAITING, dateToCalendar(raidDate), plugin.factionManager.playerFactionLink.get(sender.getUniqueId()), attackedChunks));
+        return true;
     }
 
-    public void StartRaidPrepPhase(RaidInforObject raidInfo, FactionObject defendingFaction){
+    public void StartRaidPrepPhase(RaidInfoObject raidInfo, FactionObject defendingFaction){
         if (raidInfo.getRaidState() != RaidState.START) return;
+        UiPhaseChange(raidInfo, defendingFaction, "Preparation phase has started!", "Prepare to fight!", "Preparation phase has started!", "Prepare to fight!");
 
         new BukkitRunnable() {
 
@@ -143,8 +155,9 @@ public class RaidManager {
         }.runTaskTimer(plugin, 0, 20);
     }
 
-    public void StartHoldGroundsPhase(RaidInforObject raidInfo, FactionObject defendingFaction){
+    public void StartHoldGroundsPhase(RaidInfoObject raidInfo, FactionObject defendingFaction){
         if (raidInfo.getRaidState() != RaidState.GROUNDS) return;
+        UiPhaseChange(raidInfo, defendingFaction, "The hold grounds phase has start!", "hold the convoyed land for " + TIME_DURING_HOLD_GROUNDS_PHASE / 20 + " seconds !", "The hold grounds phase has start!", "defend the convoyed land " + TIME_DURING_HOLD_GROUNDS_PHASE / 20 + " seconds");
 
         new BukkitRunnable() {
 
@@ -168,6 +181,7 @@ public class RaidManager {
 
                 if (timer <= 0) {
                     // Cancel raid, time has run out DEFEND WIN
+                    UiPhaseChange(raidInfo, defendingFaction, "Time has run out!", "You lost!", "Time has run out!", "You won!");
                 }
 
                 timer -= 20;
@@ -175,8 +189,9 @@ public class RaidManager {
         }.runTaskTimer(plugin, 0, 20);
     }
 
-    public void StartCaptureTheFlagPhase(RaidInforObject raidInfo, FactionObject defendingFaction){
+    public void StartCaptureTheFlagPhase(RaidInfoObject raidInfo, FactionObject defendingFaction){
         if (raidInfo.getRaidState() != RaidState.CAPTURE_FLAG) return;
+        UiPhaseChange(raidInfo, defendingFaction, "The capture the flag phase has started !", "Find and destroy the core !", "The capture the flag phase has started !", "Defend the core !");
 
         new BukkitRunnable() {
 
@@ -192,6 +207,7 @@ public class RaidManager {
 
                 if (timer <= 0) {
                     // Cancel raid, time has run out DEFEND WIN
+                    UiPhaseChange(raidInfo, defendingFaction, "Time has run out!", "You lost!", "Time has run out!", "You won!");
                 }
 
                 timer -= 20;
@@ -199,30 +215,47 @@ public class RaidManager {
         }.runTaskTimer(plugin, 0, 20);
     }
 
-    public void EndRaid(RaidInforObject raidInfo, FactionObject defendingFaction){
+    public void EndRaid(RaidInfoObject raidInfo, FactionObject defendingFaction){
         if (raidInfo.getRaidState() != RaidState.END) return;
+        UiPhaseChange(raidInfo, defendingFaction, "Raid ended!", "You won!", "Raid ended!", "You lost!");
 
         // If the raid gets to this phase, the ATTACK faction has won
     }
 
-    private void CheckForWaitingRaids(){
-        for (FactionObject faction : currentRaids.keySet()) {
-            for (RaidInforObject raidInfo : currentRaids.get(faction)) {
-                if (raidInfo.getRaidState() == RaidState.WAITING) {
-                    if (checkWaitingRaids(Calendar.getInstance(), raidInfo.getRaidDate())) {
-                        raidInfo.setRaidState(RaidState.START);
-                        StartRaidPrepPhase(raidInfo, faction);
+    public void StartCheckForWaitingRaids(){
+        task = new BukkitRunnable() {
+
+            @Override
+            public void run() {
+                for (FactionObject faction : waitingRaids.keySet()) {
+                    for (RaidInfoObject raidInfo : waitingRaids.get(faction)) {
+                        if (raidInfo.getRaidState() == RaidState.WAITING) {
+                            if (checkWaitingRaids(Calendar.getInstance(), raidInfo.getRaidDate())) {
+                                raidInfo.setRaidState(RaidState.START);
+                                removeRaidToFaction(faction, raidInfo);
+                                addRaidToFaction(faction, raidInfo);
+                                StartRaidPrepPhase(raidInfo, faction);
+                            }
+                        }
                     }
                 }
             }
-        }
+        }.runTaskTimer(plugin, 0, 1200); // Check every minute (20 ticks * 60 seconds)
+
     }
 
     // Helper method
-    private void addRaidToFaction(FactionObject faction, RaidInforObject raidInfo){
+    private void addRaidToFaction(FactionObject faction, RaidInfoObject raidInfo){
         var raids = currentRaids.get(faction);
         raids.add(raidInfo);
-        currentRaids.put(faction, raids);
+        waitingRaids.put(faction, raids);
+    }
+
+    private void removeRaidToFaction(FactionObject faction, RaidInfoObject raidInfo){
+        var raids = currentRaids.get(faction);
+        if (!currentRaids.containsKey(faction) || raids.contains(raidInfo)) return;
+        raids.remove(raidInfo);
+        waitingRaids.put(faction, raids);
     }
 
     private Calendar dateToCalendar(String date) {
@@ -274,5 +307,21 @@ public class RaidManager {
             }
         }
         return count;
+    }
+
+    private void UiPhaseChange(RaidInfoObject raidInfoObject, FactionObject defendingFaction, String attackingTitle, String attackingSubTitle, String defendingTitle, String defendingSubTitle){
+        // Attacking faction
+        for (UUID uuid : raidInfoObject.getAttackingFaction().getFactionMembers()){
+            if (checkPlayer(uuid) != null && Bukkit.getPlayer(uuid).isOnline() && raidInfoObject.getAttackedChunks().contains(checkPlayer(uuid).getLocation().getChunk())){
+                Bukkit.getPlayer(uuid).sendTitle(ChatColor.RED + attackingTitle, ChatColor.RED + attackingSubTitle);
+            }
+        }
+
+        // Defending faction
+        for (UUID uuid : defendingFaction.getFactionMembers()){
+            if (checkPlayer(uuid) != null && Bukkit.getPlayer(uuid).isOnline() && raidInfoObject.getAttackedChunks().contains(checkPlayer(uuid).getLocation().getChunk())){
+                Bukkit.getPlayer(uuid).sendTitle(ChatColor.RED + defendingTitle, ChatColor.RED + defendingSubTitle);
+            }
+        }
     }
 }

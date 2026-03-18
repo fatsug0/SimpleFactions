@@ -1,5 +1,6 @@
-package com.gus.simpleFactions;
+package com.gus.simpleFactions.Miscellaneous;
 
+import com.gus.simpleFactions.SimpleFactions;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
@@ -15,7 +16,7 @@ import java.util.UUID;
 public class TeleportManager {
 
     private final SimpleFactions plugin;
-    TeleportManager(SimpleFactions plugin){
+    public TeleportManager(SimpleFactions plugin){
         this.plugin = plugin;
     }
 

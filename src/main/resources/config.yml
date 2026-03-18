@@ -30,12 +30,16 @@ faction:
     interact: false
     pvp: false
     entity-damage: false
+    fire-spread: false
+    tnt-explosion: false
   weak-claim:
     block-break: false
     block-place: false
     interact: true
     pvp: true
     entity-damage: true
+    fire-spread: false
+    tnt-explosion: false
 
 # Enable the BlueMap addon of the plugin (be able to see the different factions on BlueMap)
 enable-bluemap-addon: true

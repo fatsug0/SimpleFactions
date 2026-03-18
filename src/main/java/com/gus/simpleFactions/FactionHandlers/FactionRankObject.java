@@ -1,12 +1,10 @@
-package com.gus.simpleFactions;
-
-import net.md_5.bungee.api.chat.objects.PlayerObject;
+package com.gus.simpleFactions.FactionHandlers;
 
 import java.util.ArrayList;
 
-public class FactionRank {
+public class FactionRankObject {
 
-    public FactionRank(String rankName) {
+    public FactionRankObject(String rankName) {
         this.rankName = rankName;
     }
 

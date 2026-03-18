@@ -1,18 +1,20 @@
-package com.gus.simpleFactions;
+package com.gus.simpleFactions.Miscellaneous;
 
 import com.gus.simpleFactions.Enums.PlayerChunkState;
 import com.gus.simpleFactions.Enums.RaidState;
+import com.gus.simpleFactions.FactionHandlers.FactionObject;
+import com.gus.simpleFactions.RaidHandlers.RaidInfoObject;
+import com.gus.simpleFactions.SimpleFactions;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -45,6 +47,7 @@ public class MainEventListener implements Listener {
         if (plugin.factionManager.playerInProtectedChunks.get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.HARD) ||
                 plugin.factionManager.playerInProtectedChunks.get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.WEAK)) return;
 
+        //region Check Claim Chunk
         if (chunkFaction.isChunkHardClaimed(e.getBlock().getChunk())) {
             if (!plugin.getConfig().getBoolean("faction.object.hard-claim.block-break")) {
                 Objects.requireNonNull(Bukkit.getPlayer(e.getPlayer().getUniqueId())).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§4§lYou are in claimed land !"));
@@ -56,19 +59,20 @@ public class MainEventListener implements Listener {
                 e.setCancelled(true);
             }
         }
+        //endregion
 
         //region Raid End Check
-        for (RaidInforObject raidInforObject : plugin.raidManager.currentRaids.get(chunkFaction)){
-            if (raidInforObject.getRaidState() != RaidState.CAPTURE_FLAG) {
+        for (RaidInfoObject raidInfoObject : plugin.raidManager.currentRaids.get(chunkFaction)){
+            if (raidInfoObject.getRaidState() != RaidState.CAPTURE_FLAG) {
                 e.setCancelled(true);
                 return;
             }
 
             ItemStack item = new ItemStack(e.getBlock().getType(), 1, e.getBlock().getData());
-            if (raidInforObject.getRaidCore().equals(item)) {
+            if (raidInfoObject.getRaidCore().equals(item)) {
                 // Core has been destroyed, end the raid
-                raidInforObject.setRaidState(RaidState.END);
-                plugin.raidManager.EndRaid(raidInforObject, chunkFaction);
+                raidInfoObject.setRaidState(RaidState.END);
+                plugin.raidManager.EndRaid(raidInfoObject, chunkFaction);
             }
         }
         //endregion
@@ -83,6 +87,7 @@ public class MainEventListener implements Listener {
         if (plugin.factionManager.playerInProtectedChunks.get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.HARD) ||
                 plugin.factionManager.playerInProtectedChunks.get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.WEAK)) return;
 
+        //region Check Claim Chunk
         if (chunkFaction.isChunkHardClaimed(e.getBlock().getChunk())) {
             if (!plugin.getConfig().getBoolean("faction.object.hard-claim.block-place")) {
                 Objects.requireNonNull(Bukkit.getPlayer(e.getPlayer().getUniqueId())).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§4§lYou are in claimed land !"));
@@ -94,18 +99,19 @@ public class MainEventListener implements Listener {
                 e.setCancelled(true);
             }
         }
+        //endregion
 
         //region Raid Start Check
-        for (RaidInforObject raidInforObject : plugin.raidManager.currentRaids.get(chunkFaction)){
-            if (raidInforObject.getRaidState() != RaidState.START) {
+        for (RaidInfoObject raidInfoObject : plugin.raidManager.currentRaids.get(chunkFaction)){
+            if (raidInfoObject.getRaidState() != RaidState.START) {
                 e.setCancelled(true);
                 return;
             }
 
             ItemStack item = new ItemStack(e.getBlock().getType(), 1, e.getBlock().getData());
-            if (raidInforObject.getRaidCore().equals(item)) {
+            if (raidInfoObject.getRaidCore().equals(item)) {
                 // Core has been destroyed, end the raid
-                raidInforObject.setRaidState(RaidState.GROUNDS);
+                raidInfoObject.setRaidState(RaidState.GROUNDS);
             }
         }
         //endregion
@@ -122,6 +128,7 @@ public class MainEventListener implements Listener {
         if (plugin.factionManager.playerInProtectedChunks.get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.HARD) ||
                 plugin.factionManager.playerInProtectedChunks.get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.WEAK)) return;
 
+        //region Check Claim Chunk
         if (chunkFaction.isChunkHardClaimed(e.getPlayer().getLocation().getChunk())) {
             if ((e.getAction().equals(Action.RIGHT_CLICK_BLOCK) || e.getAction().equals(Action.LEFT_CLICK_BLOCK))
                     && !plugin.getConfig().getBoolean("faction.hard-claim.interact")){
@@ -135,6 +142,7 @@ public class MainEventListener implements Listener {
                 e.setCancelled(true);
             }
         }
+        //endregion
     }
 
     @EventHandler
@@ -147,6 +155,7 @@ public class MainEventListener implements Listener {
             FactionObject chunkFaction = plugin.factionManager.linkedChunks.get(e.getEntity().getLocation().getChunk()) == null ? null : plugin.factionManager.linkedChunks.get(e.getEntity().getLocation().getChunk());
             assert chunkFaction != null;
 
+            //region Check Claim Chunk
             if (Objects.requireNonNull(e.getEntity().getType()).equals(EntityType.PLAYER)){ // Other Player is a Player (the one being attacked)
 
                 if (chunkFaction.isChunkHardClaimed(e.getEntity().getLocation().getChunk())) {
@@ -174,6 +183,7 @@ public class MainEventListener implements Listener {
                     }
                 }
             }
+            //endregion
         }
     }
 
@@ -193,12 +203,50 @@ public class MainEventListener implements Listener {
             Objects.requireNonNull(scoreboard.getTeam("faction" + plugin.factionManager.playerFactionLink.get(e.getPlayer().getUniqueId()).getFactionName())).addEntry(e.getPlayer().getName());
         }
 
-        // Check if the player has all the basic permission that every player should have
+        // Check if the player has all the basic permission that every player should have, make the basic perm persistent
         if (!e.getPlayer().hasPermission("simplefactions")){
             plugin.permissionManager.AddPerm(e.getPlayer(), new ArrayList<>(List.of("simplefactions")));
         }
+    }
 
-        System.out.println(e.getPlayer().hasPermission("simplefactions"));
+    @EventHandler
+    public void onTntExplode(TNTPrimeEvent e){
+        // First check if it's a hard claim or a weak claim
+        FactionObject chunkFaction = plugin.factionManager.linkedChunks.get(e.getBlock().getLocation().getChunk()) == null ? null : plugin.factionManager.linkedChunks.get(e.getBlock().getLocation().getChunk());
+        if (chunkFaction == null) return;
+
+        //region Check Claim Chunk
+        if (chunkFaction.isChunkHardClaimed(e.getBlock().getLocation().getChunk())) {
+            if (!plugin.getConfig().getBoolean("faction.hard-claim.tnt-explosion")){
+                e.setCancelled(true);
+            }
+        } else {
+            if (!plugin.getConfig().getBoolean("faction.weak-claim.tnt-explosion")){
+                e.setCancelled(true);
+            }
+        }
+        //endregion
+    }
+
+    @EventHandler
+    public void onBlockSpread(BlockSpreadEvent e){
+        // First check if it's a hard claim or a weak claim
+        FactionObject chunkFaction = plugin.factionManager.linkedChunks.get(e.getBlock().getLocation().getChunk()) == null ? null : plugin.factionManager.linkedChunks.get(e.getBlock().getLocation().getChunk());
+        if (chunkFaction == null) return;
+
+        //region Check Claim Chunk
+        if (e.getBlock().getType().equals(Material.FIRE)){
+            if (chunkFaction.isChunkHardClaimed(e.getBlock().getLocation().getChunk())) {
+                if (!plugin.getConfig().getBoolean("faction.hard-claim.fire-spread")){
+                    e.setCancelled(true);
+                }
+            } else {
+                if (!plugin.getConfig().getBoolean("faction.weak-claim.fire-spread")){
+                    e.setCancelled(true);
+                }
+            }
+        }
+        //endregion
     }
 
     @EventHandler

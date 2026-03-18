@@ -1,7 +1,7 @@
 package com.gus.simpleFactions.Commands.Faction.Sub;
 
 import com.gus.simpleFactions.Commands.Builders.CommandInterface;
-import com.gus.simpleFactions.FactionObject;
+import com.gus.simpleFactions.FactionHandlers.FactionObject;
 import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;

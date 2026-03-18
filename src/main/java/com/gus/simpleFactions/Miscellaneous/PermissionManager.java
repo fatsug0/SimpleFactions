@@ -1,5 +1,6 @@
-package com.gus.simpleFactions;
+package com.gus.simpleFactions.Miscellaneous;
 
+import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachment;
 

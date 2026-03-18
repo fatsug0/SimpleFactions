@@ -5,7 +5,7 @@ import com.gus.simpleFactions.Commands.Builders.CommandInterface;
 import com.gus.simpleFactions.Commands.Faction.Sub.*;
 import com.gus.simpleFactions.Commands.Faction.Sub.Home.FactionSubHome;
 import com.gus.simpleFactions.Commands.Faction.Sub.Rank.FactionSubRank;
-import com.gus.simpleFactions.FactionObject;
+import com.gus.simpleFactions.FactionHandlers.FactionObject;
 import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -48,6 +48,10 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
             put("leave", new FactionSubLeave(plugin));
             put("unclaim", new FactionSubUnclaim(plugin));
             put("prefix", new FactionSubPrefix(plugin));
+            put("raid", new FactionSubRaid(plugin));
+            put("toggle", new FactionSubToggle(plugin));
+            put("storage", new FactionSubStorage(plugin));
+            put("admin", new  FactionSubAdmin(plugin));
         }};
     }
 
@@ -56,7 +60,7 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
         // Get the last argument and execute the command linked to it
         // Need to get the last argument subcommand and return them
         // Last argument -> args[args.length - 1]
-        if (args.length == 0) {
+        if (args.length == 0 || !getSubCommands().containsKey(args[0])) {
             sender.sendMessage(sendUsageError());
             return;
         }
@@ -82,7 +86,7 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
             }
         }
 
-        // Special cases for onTabComplete
+        //region Special cases for onTabComplete
         switch (command.getName()) {
             case "invite":
                 ArrayList<Player> invitePlayers = new ArrayList<>(plugin.getServer().getOnlinePlayers());
@@ -164,7 +168,27 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
                 } else {
                     return new ArrayList<>(command.getSubCommands().keySet());
                 }
-        }
+
+            case "toggle":
+                switch (args.length) {
+                    case 2:
+                        if (command.getPermission().equalsIgnoreCase("simplefactions.toggle")){
+                            ArrayList<String> factionNames = new ArrayList<>();
+                            for (FactionObject faction : plugin.factionManager.existingFactions) {
+                                factionNames.add(faction.getFactionName());
+                            }
+                            return factionNames;
+                        }
+
+                    case 3:
+                        return Arrays.asList("hard", "weak", "all");
+
+                    case 4:
+                        return Arrays.asList("enable", "disable");
+                }
+                }
+
+        //endregion
 
         return new ArrayList<>(command.getSubCommands().keySet());
     }

@@ -1,7 +1,7 @@
-package com.gus.simpleFactions;
+package com.gus.simpleFactions.FactionHandlers;
 
 import com.gus.simpleFactions.Enums.PlayerChunkState;
-import de.bluecolored.bluemap.api.math.Color;
+import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -28,66 +28,62 @@ public class FactionManager {
 
     // BlueMap related
     public Map<Chunk, Integer> bluemapClaimedChunk = new HashMap<>();
-    public Map<FactionObject, Color> factionClaimColorCache = new HashMap<>();
 
-    public void CreateFaction(UUID player, String factionName){
-
-        if (playerFactionLink.containsKey(player)) {
-            Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You already have a faction !");
+    public void CreateFaction(UUID playerUUID, String factionName){
+        if (playerFactionLink.containsKey(playerUUID)) {
+            Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You already have a faction !");
             return;
         }
 
         if (factionNameExists(factionName)){
-            Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "This faction name already exists !");
+            Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "This faction name already exists !");
             return;
         }
 
-        var factionClaimColor = getRandomBlueMapColor();
-        FactionObject newFaction = new FactionObject(plugin, player, factionName, factionClaimColor, plugin.getConfig().getInt("faction.object.base-faction-power"), plugin.getConfig().getInt("faction.object.weak-amount-coefficient"));
+        FactionObject newFaction = new FactionObject(plugin, playerUUID, factionName, plugin.getConfig().getInt("faction.object.base-faction-power"), plugin.getConfig().getInt("faction.object.weak-amount-coefficient"));
         existingFactions.add(newFaction);
-        playerFactionLink.put(player, newFaction);
-        newFaction.createTabTeam();
-        factionClaimColorCache.put(newFaction, factionClaimColor);
+        playerFactionLink.put(playerUUID, newFaction);
+        newFaction.createTabTeam(factionName, factionName, new ArrayList<>(List.of("#77777")));
 
-        Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage("You have created a new faction: " + factionName + " !");
+        Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).sendMessage("You have created a new faction: " + factionName + " !");
     }
 
-    public void JoinFaction(UUID player, FactionObject faction){
+    public void JoinFaction(UUID playerUUID, FactionObject faction){
         // Check if an invitation is pending
         for (FactionInvite invite : pendingFactionInvites) {
-            if (invite.invitingFaction.equals(faction) && invite.invitedPlayer.equals(player)) {
+            if (invite.invitingFaction.equals(faction) && invite.invitedPlayer.equals(playerUUID)) {
                 // If the player already has a faction, kick them from it
-                if (playerFactionLink.containsKey(player)){
-                    playerFactionLink.get(player).KickPlayer(player);
+                if (playerFactionLink.containsKey(playerUUID)){
+                    playerFactionLink.get(playerUUID).KickPlayer(playerUUID);
                 }
 
                 // Add player in the faction, Faction side
-                faction.getFactionMembers().add(player);
+                faction.getFactionMembers().add(playerUUID);
 
                 // Add player in the faction, Manager side
-                playerFactionLink.put(player, faction);
+                playerFactionLink.put(playerUUID, faction);
 
                 // Add power for the faction
                 faction.setPower(faction.getPower() + plugin.getConfig().getInt("faction.object.base-faction-power-per-member"));
                 return;
             }
         }
-        checkPlayer(player).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You have not been invited to join this faction");
+        checkPlayer(playerUUID).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You have not been invited to join this faction");
     }
 
-    public void InvitePlayer(UUID sender, UUID player, FactionObject invitedFaction){
+    public void InvitePlayer(UUID senderUUID, UUID playerUUID, FactionObject invitedFaction){
         for (FactionInvite invite : pendingFactionInvites){
-            if (invite.invitingFaction.equals(invitedFaction) && invite.invitedPlayer.equals(player)) {
-                if (checkPlayer(sender) == null) continue;
-                checkPlayer(sender).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "This player already has been invited to join your faction");
+            if (invite.invitingFaction.equals(invitedFaction) && invite.invitedPlayer.equals(playerUUID)) {
+                if (checkPlayer(senderUUID) == null) continue;
+                checkPlayer(senderUUID).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "This player already has been invited to join your faction");
                 return;
             }
         }
-        pendingFactionInvites.add(new FactionInvite(player, invitedFaction));
+        pendingFactionInvites.add(new FactionInvite(playerUUID, invitedFaction));
 
         // Send confirmations
-        if (checkPlayer(player) != null) checkPlayer(player).sendMessage(ChatColor.GREEN + ChatColor.BOLD.toString() + "You have been invited to join " + invitedFaction.getFactionName() + " !");
-        if (checkPlayer(sender) != null && checkPlayer(player) != null) checkPlayer(sender).sendMessage(ChatColor.GREEN + ChatColor.BOLD.toString() + "You have invited " + Bukkit.getPlayer(player).getName() + " to join " + invitedFaction.getFactionName() + " !");
+        if (checkPlayer(playerUUID) != null) checkPlayer(playerUUID).sendMessage(ChatColor.GREEN + ChatColor.BOLD.toString() + "You have been invited to join " + invitedFaction.getFactionName() + " !");
+        if (checkPlayer(senderUUID) != null && checkPlayer(playerUUID) != null) checkPlayer(senderUUID).sendMessage(ChatColor.GREEN + ChatColor.BOLD.toString() + "You have invited " + Bukkit.getPlayer(playerUUID).getName() + " to join " + invitedFaction.getFactionName() + " !");
     }
 
     public void SendHelp(UUID player){
@@ -108,31 +104,21 @@ public class FactionManager {
         );
     }
 
-    public boolean CanInteractWithChunk(UUID player, Chunk chunk){
+    public boolean CanInteractWithChunk(UUID playerUUID, Chunk chunk){
 
         // Chunk is in wilderness, everyone can interact with it
         if (!linkedChunks.containsKey(chunk)) return true;
 
         // Past this point, the chunk is claimed, need to determine by whom and if the player can interact with it
         // The player has no faction, he cannot interact with it
-        if (!playerFactionLink.containsKey(player)) return false;
+        if (!playerFactionLink.containsKey(playerUUID)) return false;
 
         // Past this point, The player has a faction, but maybe different from the chunk he's standing in
         // The player is in the same faction as the claimed chunk
-        if (playerFactionLink.get(player).equals(linkedChunks.get(chunk))) return true;
+        if (playerFactionLink.get(playerUUID).equals(linkedChunks.get(chunk))) return true;
 
         // Every outcome has been checked, but the faction is not equal as the claimed one, return false
         return false;
-    }
-
-    private Color getRandomBlueMapColor(){
-        Random random = new Random();
-        while (true){
-            Color randomColor = new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256));
-            if (!factionClaimColorCache.containsValue(randomColor)) {
-                return randomColor;
-            }
-        }
     }
 
     private boolean factionNameExists(String factionName){
