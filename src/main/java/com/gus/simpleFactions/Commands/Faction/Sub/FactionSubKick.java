@@ -45,12 +45,12 @@ public class FactionSubKick implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length != 3 && !args[2].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.playerFactionLink.containsKey(player.getUniqueId())){
+        if (args.length != 3 && !args[2].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())){
             sender.sendMessage(sendUsageError());
             return;
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) return;
-        plugin.factionManager.playerFactionLink.get(player.getUniqueId()).KickPlayer(Objects.requireNonNull(Bukkit.getPlayer(args[1])).getUniqueId());
+        plugin.factionManager.factionMembershipService.KickPlayer(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), Objects.requireNonNull(Bukkit.getPlayer(args[1])).getUniqueId());
     }
 }

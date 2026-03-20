@@ -5,7 +5,7 @@ import com.gus.simpleFactions.Commands.Builders.CommandInterface;
 import com.gus.simpleFactions.Commands.Faction.Sub.*;
 import com.gus.simpleFactions.Commands.Faction.Sub.Home.FactionSubHome;
 import com.gus.simpleFactions.Commands.Faction.Sub.Rank.FactionSubRank;
-import com.gus.simpleFactions.FactionHandlers.FactionObject;
+import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
 import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -101,7 +101,7 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
 
 
                 // Remove all players already in the faction
-                for (UUID factionPlayerUUID : plugin.factionManager.playerFactionLink.get(player.getUniqueId()).getFactionMembers()){
+                for (UUID factionPlayerUUID : plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()).getFactionMembers()){
                     if (checkPlayer(factionPlayerUUID) != null) invitePlayers.remove(checkPlayer(factionPlayerUUID));
                 }
 
@@ -116,7 +116,7 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
             case "kick":
 
                 // Get all players in the faction
-                ArrayList<UUID> kickPlayers = new ArrayList<>(plugin.factionManager.playerFactionLink.get(player.getUniqueId()).getFactionMembers());
+                ArrayList<UUID> kickPlayers = new ArrayList<>(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()).getFactionMembers());
 
                 // Remove the sender from the list
                 kickPlayers.remove(player.getUniqueId());
@@ -132,12 +132,12 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
             case "add":
                 if (command.getPermission().equalsIgnoreCase("simplefactions.rank.manage.player.add")){
                     // Get all players in the faction
-                    FactionObject playerFaction = plugin.factionManager.playerFactionLink.get(player.getUniqueId());
+                    FactionObject playerFaction = plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId());
                     ArrayList<UUID> factionPlayers = new ArrayList<>(playerFaction.getFactionMembers());
 
                     // Remove all players already in the rank
                     for (UUID factionPlayerUUID : factionPlayers){
-                        if (playerFaction.factionRanks.get(factionPlayerUUID).getRankName().equalsIgnoreCase(args[args.length - 2])) {
+                        if (playerFaction.getFactionRanks().get(factionPlayerUUID).getRankName().equalsIgnoreCase(args[args.length - 2])) {
                             factionPlayers.remove(factionPlayerUUID);
                         }
                     }
@@ -174,7 +174,7 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
                     case 2:
                         if (command.getPermission().equalsIgnoreCase("simplefactions.toggle")){
                             ArrayList<String> factionNames = new ArrayList<>();
-                            for (FactionObject faction : plugin.factionManager.existingFactions) {
+                            for (FactionObject faction : plugin.factionManager.factionMembershipService.getExistingFactions()) {
                                 factionNames.add(faction.getFactionName());
                             }
                             return factionNames;

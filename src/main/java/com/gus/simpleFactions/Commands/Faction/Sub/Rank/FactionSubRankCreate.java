@@ -43,12 +43,12 @@ public class FactionSubRankCreate implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length != 3 || !(sender instanceof Player player) || !plugin.factionManager.playerFactionLink.containsKey(player.getUniqueId())) {
+        if (args.length != 3 || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())) {
             sender.sendMessage(sendUsageError());
             return;
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) return;
-        plugin.factionManager.playerFactionLink.get(player.getUniqueId()).CreateFactionRank(args[2], player);
+        plugin.factionManager.factionRankService.CreateFactionRank(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[2], player);
     }
 }

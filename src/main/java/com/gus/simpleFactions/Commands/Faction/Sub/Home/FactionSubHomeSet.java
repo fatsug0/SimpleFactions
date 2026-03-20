@@ -41,12 +41,12 @@ public class FactionSubHomeSet implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length != 2 || !(sender instanceof Player player) || !plugin.factionManager.playerFactionLink.containsKey(player.getUniqueId())){
+        if (args.length != 2 || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())){
             sendUsageError();
             return;
         }
 
         if (!player.hasPermission(getPermission())) return;
-        plugin.factionManager.playerFactionLink.get(player.getUniqueId()).SetHome(player.getUniqueId());
+        plugin.factionManager.factionMembershipService.SetHome(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), player.getUniqueId());
     }
 }

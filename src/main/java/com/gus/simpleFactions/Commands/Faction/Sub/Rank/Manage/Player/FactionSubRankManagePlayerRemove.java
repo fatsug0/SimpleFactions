@@ -44,12 +44,12 @@ public class FactionSubRankManagePlayerRemove implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length != 7 && !args[6].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.playerFactionLink.containsKey(player.getUniqueId())){
+        if (args.length != 7 && !args[6].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())){
             sender.sendMessage(sendUsageError());
             return;
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) return;
-        plugin.factionManager.playerFactionLink.get(player.getUniqueId()).RemovePlayerFromRank(Objects.requireNonNull(Bukkit.getPlayer(args[4])), args[1]);
+        plugin.factionManager.factionRankService.RemovePlayerFromRank(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), Objects.requireNonNull(Bukkit.getPlayer(args[4])), args[1]);
     }
 }

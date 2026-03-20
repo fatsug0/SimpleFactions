@@ -1,7 +1,7 @@
 package com.gus.simpleFactions.Commands.Faction.Sub;
 
 import com.gus.simpleFactions.Commands.Builders.CommandInterface;
-import com.gus.simpleFactions.FactionHandlers.FactionObject;
+import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
 import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -49,14 +49,14 @@ public class FactionSubPrefix implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length > 7 || args.length < 3 || !(sender instanceof Player player) || !plugin.factionManager.playerFactionLink.containsKey(player.getUniqueId())){
+        if (args.length > 7 || args.length < 3 || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())){
             sender.sendMessage(sendUsageError());
             return;
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) return;
 
-        FactionObject faction = plugin.factionManager.playerFactionLink.get(player.getUniqueId());
-        faction.setTeamPrefix(args[1], new ArrayList<>(Arrays.asList(args).subList(2, args.length)));
+        FactionObject faction = plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId());
+        plugin.factionManager.factionFormatterService.setTeamPrefix(faction.getFactionName(), args[1], new ArrayList<>(Arrays.asList(args).subList(2, args.length)));
     }
 }

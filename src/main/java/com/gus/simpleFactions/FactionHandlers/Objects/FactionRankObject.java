@@ -1,4 +1,4 @@
-package com.gus.simpleFactions.FactionHandlers;
+package com.gus.simpleFactions.FactionHandlers.Objects;
 
 import java.util.ArrayList;
 

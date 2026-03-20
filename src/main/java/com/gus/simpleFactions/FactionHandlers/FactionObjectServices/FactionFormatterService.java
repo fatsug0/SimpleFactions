@@ -1,6 +1,7 @@
 package com.gus.simpleFactions.FactionHandlers.FactionObjectServices;
 
-import com.gus.simpleFactions.FactionHandlers.FactionRankObject;
+import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
+import com.gus.simpleFactions.FactionHandlers.Objects.FactionRankObject;
 import com.gus.simpleFactions.SimpleFactions;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
@@ -24,8 +25,8 @@ public class FactionFormatterService {
         this.plugin = plugin;
     }
 
-    public String SendFactionInfo(UUID playerUUID) {
-        Player player = checkPlayer(playerUUID);
+    public String SendFactionInfo(FactionObject faction, UUID playerUUID) {
+        Player player = plugin.factionManager.factionHelperService.checkPlayer(playerUUID);
         if (player == null) {
             System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
             return ChatColor.RED + "Something went wrong when trying to find the player with the UUID: " + playerUUID;
@@ -33,25 +34,25 @@ public class FactionFormatterService {
 
         // Enhanced with colors, styles, and more details
 
-        return "§e§l=== Faction Info: §a§l" + this.getFactionName() + " §e§l===\n" +
-                "§7Owner: §b§l" + Objects.requireNonNull(Bukkit.getPlayer(this.getOwner())).getName() + "\n" +
-                "§7Members: §a" + this.getFactionMembers().size() + " §7(total)\n" +
-                "§7Power: §6" + this.getPower() + " §7/ Max Weak Chunks: §c" + (int) this.getMaxWeakChunks() + "\n" +
-                "§7Claimed Chunks: §2" + this.getClaimedChunks().size() + " §7(Strong) + §4" + this.getWeakChunks().size() + " §7(Weak)\n" +
-                "§7Home: §d" + (this.getFactionHome() != null ? "Set at " + this.getFactionHome().getBlockX() + ", " + this.getFactionHome().getBlockY() + ", " + this.getFactionHome().getBlockZ() : "Not set") + "\n" +
+        return "§e§l=== Faction Info: §a§l" + faction.getFactionName() + " §e§l===\n" +
+                "§7Owner: §b§l" + Objects.requireNonNull(Bukkit.getPlayer(faction.getOwner())).getName() + "\n" +
+                "§7Members: §a" + faction.getFactionMembers().size() + " §7(total)\n" +
+                "§7Power: §6" + faction.getPower() + " §7/ Max Weak Chunks: §c" + (int) plugin.getConfig().getDouble("weak-amount-coefficient") + "\n" +
+                "§7Claimed Chunks: §2" + faction.getHardClaimedChunks().size() + " §7(Strong) + §4" + faction.getWeakClaimedChunks().size() + " §7(Weak)\n" +
+                "§7Home: §d" + (faction.getFactionHome() != null ? "Set at " + faction.getFactionHome().getBlockX() + ", " + faction.getFactionHome().getBlockY() + ", " + faction.getFactionHome().getBlockZ() : "Not set") + "\n" +
                 "§e§l=======================";
     }
 
-    public String getAllRankInfo(){
-        if (existingFactionRanks.isEmpty()) {
+    public String getAllRankInfo(FactionObject faction){
+        if (faction.getExistingFactionRankObjects().isEmpty()) {
             return "§cNo ranks exist in this faction.";
         }
 
         StringBuilder info = new StringBuilder();
-        info.append("§e§l=== All Ranks in §a§l").append(this.getFactionName()).append(" §e§l===\n");
-        for (FactionRankObject rank : existingFactionRanks) {
+        info.append("§e§l=== All Ranks in §a§l").append(faction.getFactionName()).append(" §e§l===\n");
+        for (FactionRankObject rank : faction.getExistingFactionRankObjects()) {
             int memberCount = 0;
-            for (FactionRankObject playerRank : factionRanks.values()) {
+            for (FactionRankObject playerRank : faction.getFactionRanks().values()) {
                 if (playerRank.getRankName().equals(rank.getRankName())) {
                     memberCount++;
                 }
@@ -63,9 +64,9 @@ public class FactionFormatterService {
         return info.toString();
     }
 
-    public String getRankInfo(String rankName){
+    public String getRankInfo(FactionObject faction, String rankName){
         FactionRankObject targetRank = null;
-        for (FactionRankObject rank : existingFactionRanks) {
+        for (FactionRankObject rank : faction.getExistingFactionRankObjects()) {
             if (rank.getRankName().equalsIgnoreCase(rankName)) {
                 targetRank = rank;
                 break;
@@ -76,7 +77,7 @@ public class FactionFormatterService {
         }
 
         int memberCount = 0;
-        for (FactionRankObject playerRank : factionRanks.values()) {
+        for (FactionRankObject playerRank : faction.getFactionRanks().values()) {
             if (playerRank.getRankName().equals(rankName)) {
                 memberCount++;
             }
@@ -88,9 +89,9 @@ public class FactionFormatterService {
                 "§e§l=======================";
     }
 
-    public String SendRankPlayerInfo(String rankName){
+    public String SendRankPlayerInfo(FactionObject faction, String rankName){
         FactionRankObject targetRank = null;
-        for (FactionRankObject rank : existingFactionRanks) {
+        for (FactionRankObject rank : faction.getExistingFactionRankObjects()) {
             if (rank.getRankName().equalsIgnoreCase(rankName)) {
                 targetRank = rank;
                 break;
@@ -103,7 +104,7 @@ public class FactionFormatterService {
         StringBuilder info = new StringBuilder();
         info.append("§e§l=== Players in Rank: §b§l").append(rankName).append(" §e§l===\n");
         boolean hasMembers = false;
-        for (Map.Entry<UUID, FactionRankObject> entry : factionRanks.entrySet()) {
+        for (Map.Entry<UUID, FactionRankObject> entry : faction.getFactionRanks().entrySet()) {
             if (entry.getValue().getRankName().equals(rankName)) {
                 Player player = Bukkit.getPlayer(entry.getKey());
                 if (player != null) {
@@ -120,9 +121,9 @@ public class FactionFormatterService {
         return info.toString();
     }
 
-    public String SendRankPermissionsInfo(String rankName){
+    public String SendRankPermissionsInfo(FactionObject faction, String rankName){
         FactionRankObject targetRank = null;
-        for (FactionRankObject rank : existingFactionRanks) {
+        for (FactionRankObject rank : faction.getExistingFactionRankObjects()) {
             if (rank.getRankName().equalsIgnoreCase(rankName)) {
                 targetRank = rank;
                 break;
@@ -146,13 +147,31 @@ public class FactionFormatterService {
         return info.toString();
     }
 
-    private String toTeamName(String factionName) {
+    public void SendHelp(UUID player){
+        // Here we explain the use of the faction command
+        Objects.requireNonNull(Bukkit.getPlayer(player)).sendMessage(
+                "The Faction command use (faction / fac / f):\n" +
+                        "/faction create <factionName> : Create a new faction\n>" +
+                        "/faction join <factionName> : Join an existing faction\n>" +
+                        "/faction invite <playerName> : Invite a player to join your faction\n>" +
+                        "/faction kick <playerName> : Kick a player from your faction\n>" +
+                        "/faction home [set] : Teleport to your faction home, use the set option to set it\n>" +
+                        "/faction claim : Claim the chunk you currently are\n" +
+                        "/faction unclaim : Unclaim the chunk you currently are\n" +
+                        "/faction info : Get all the important info on your faction\n" +
+                        "/faction leave <confirm> : Leave your faction, use the confirm option to confirm the action\n" +
+                        "/faction disband <confirm> : Disband your faction, use the confirm option to confirm the action\n" +
+                        "/faction disband : Disband your faction\n"
+        );
+    }
+
+    public String toTeamName(String factionName) {
         // This is used to ensure the right format in the team naming (basic characters and 16 characters limit)
         String base = "f_" + factionName.toLowerCase().replaceAll("[^a-z0-9_]", "");
         return base.substring(0, Math.min(16, base.length()));
     }
 
-    private String useLegacyText(String text){
+    public String useLegacyText(String text){
         final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
                 .character('§')
                 .hexColors()
@@ -164,7 +183,7 @@ public class FactionFormatterService {
         return LEGACY.serialize(parsed);
     }
 
-    private String useMiniMessage(String text, ArrayList<String> colors){
+    public String useMiniMessage(String text, ArrayList<String> colors){
         final MiniMessage MM = MiniMessage.miniMessage();
         final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
                 .character('§')
@@ -183,9 +202,9 @@ public class FactionFormatterService {
         return LEGACY.serialize(parsed);
     }
 
-    public void setTeamPrefix(String prefixName, ArrayList<String> colors){
+    public void setTeamPrefix(String factionName, String prefixName, ArrayList<String> colors){
         Scoreboard scoreboard = Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard();
-        Team team = scoreboard.getTeam(toTeamName(this.getFactionName()));
+        Team team = scoreboard.getTeam(toTeamName(factionName));
         if (team == null) return;
         team.setPrefix(useMiniMessage(" [" + prefixName + "] ", colors));
     }

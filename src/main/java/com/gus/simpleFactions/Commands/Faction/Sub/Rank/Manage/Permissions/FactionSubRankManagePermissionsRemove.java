@@ -45,7 +45,7 @@ public class FactionSubRankManagePermissionsRemove implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length < 6 || !(sender instanceof Player player) || !plugin.factionManager.playerFactionLink.containsKey(player.getUniqueId())) {
+        if (args.length < 6 || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())) {
             sender.sendMessage(sendUsageError());
             return;
         }
@@ -56,6 +56,6 @@ public class FactionSubRankManagePermissionsRemove implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) return;
-        plugin.factionManager.playerFactionLink.get(player.getUniqueId()).RemovePermissionRank(args[4], permissions);
+        plugin.factionManager.factionRankService.RemovePermissionRank(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[4], permissions);
     }
 }

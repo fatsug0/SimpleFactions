@@ -58,7 +58,7 @@ public class FactionSubToggle implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length != 4 || !(sender instanceof Player player) || !plugin.factionManager.playerFactionLink.containsKey(player.getUniqueId())) {
+        if (args.length != 4 || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())) {
             sender.sendMessage(sendUsageError());
             return;
         }
@@ -68,16 +68,16 @@ public class FactionSubToggle implements CommandInterface {
         ArrayList<Chunk> chunksToDraw = new ArrayList<>();
         switch (args[2]) {
             case "weak":
-                chunksToDraw = plugin.factionManager.playerFactionLink.get(player.getUniqueId()).getWeakChunks();
+                chunksToDraw = plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()).getWeakClaimedChunks();
                 break;
 
             case "hard":
-                chunksToDraw = plugin.factionManager.playerFactionLink.get(player.getUniqueId()).getClaimedChunks();
+                chunksToDraw = plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()).getHardClaimedChunks();
                 break;
 
             case "all":
-                chunksToDraw.addAll(plugin.factionManager.playerFactionLink.get(player.getUniqueId()).getWeakChunks());
-                chunksToDraw.addAll(plugin.factionManager.playerFactionLink.get(player.getUniqueId()).getClaimedChunks());
+                chunksToDraw.addAll(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()).getWeakClaimedChunks());
+                chunksToDraw.addAll(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()).getHardClaimedChunks());
                 break;
         }
 

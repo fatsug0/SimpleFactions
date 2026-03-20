@@ -43,12 +43,12 @@ public class FactionSubRankManagePermissionsList implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length != 5 || !(sender instanceof Player player) || !plugin.factionManager.playerFactionLink.containsKey(player.getUniqueId())) {
+        if (args.length != 5 || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())) {
             sender.sendMessage(sendUsageError());
             return;
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) return;
-        sender.sendMessage(plugin.factionManager.playerFactionLink.get(player.getUniqueId()).SendRankPermissionsInfo(args[4]));
+        player.sendMessage(plugin.factionManager.factionFormatterService.SendRankPermissionsInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[4]));
     }
 }

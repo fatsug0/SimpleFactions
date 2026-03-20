@@ -42,12 +42,12 @@ public class FactionSubRankManageInfo implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length != 4 || !(sender instanceof Player player) || !plugin.factionManager.playerFactionLink.containsKey(player.getUniqueId())) {
+        if (args.length != 4 || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())) {
             sender.sendMessage(sendUsageError());
             return;
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) return;
-        player.sendMessage(plugin.factionManager.playerFactionLink.get(player.getUniqueId()).getRankInfo(args[3]));
+        player.sendMessage(plugin.factionManager.factionFormatterService.getRankInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[3]));
     }
 }

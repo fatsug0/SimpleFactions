@@ -1,7 +1,7 @@
 package com.gus.simpleFactions.RaidHandlers;
 
 import com.gus.simpleFactions.Enums.RaidState;
-import com.gus.simpleFactions.FactionHandlers.FactionObject;
+import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
 import org.bukkit.Chunk;
 import org.bukkit.inventory.ItemStack;
 

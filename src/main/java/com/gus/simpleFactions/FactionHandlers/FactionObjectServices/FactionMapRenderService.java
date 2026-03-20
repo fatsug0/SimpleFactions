@@ -1,31 +1,132 @@
 package com.gus.simpleFactions.FactionHandlers.FactionObjectServices;
 
+import com.flowpowered.math.vector.Vector2d;
 import com.flowpowered.math.vector.Vector3d;
+import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
 import com.gus.simpleFactions.SimpleFactions;
 import de.bluecolored.bluemap.api.BlueMapAPI;
 import de.bluecolored.bluemap.api.BlueMapMap;
 import de.bluecolored.bluemap.api.markers.LineMarker;
+import de.bluecolored.bluemap.api.markers.ShapeMarker;
 import de.bluecolored.bluemap.api.math.Color;
 import de.bluecolored.bluemap.api.math.Line;
+import de.bluecolored.bluemap.api.math.Shape;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FactionMapRenderService {
 
     private final SimpleFactions plugin;
     public FactionMapRenderService(SimpleFactions plugin) {
         this.plugin = plugin;
+        USE_BLUEMAP_ADDON = plugin.getConfig().getBoolean("enable-bluemap-addon");
     }
 
-    private void createLineMarker(double x1, double z1, double x2, double z2, int id) {
+    private Map<Chunk, Integer> bluemapClaimedChunk = new HashMap<>();
+    public Map<Chunk, Integer> getBluemapClaimedChunk() {
+        return bluemapClaimedChunk;
+    }
+    public void addBlueMapChunk(Chunk chunk, int id) {
+        this.bluemapClaimedChunk.put(chunk, id);
+    }
+    public void removeBlueMapChunk(Chunk chunk) {
+        this.bluemapClaimedChunk.remove(chunk);
+    }
+
+    private final boolean USE_BLUEMAP_ADDON;
+    public boolean getUSE_BLUEMAP_ADDON() {
+        return USE_BLUEMAP_ADDON;
+    }
+
+    public void DrawChunks(FactionObject faction, Chunk chunkToClaim, boolean weakClaim) {
+        // Get the corners of the claimed chunk
+        ArrayList<Vector2d> points = new ArrayList<>();
+        points.add(new Vector2d(chunkToClaim.getX() * 16, chunkToClaim.getZ() * 16));
+        points.add(new Vector2d(chunkToClaim.getX() * 16 + 16, chunkToClaim.getZ() * 16));
+        points.add(new Vector2d(chunkToClaim.getX() * 16 + 16, chunkToClaim.getZ() * 16 + 16));
+        points.add(new Vector2d(chunkToClaim.getX() * 16, chunkToClaim.getZ() * 16 + 16));
+
+        // Create the ShapeMarker who represent the claimed chunk
+        ShapeMarker shapeMarker;
+        if (weakClaim) {
+            shapeMarker = ShapeMarker.builder()
+                    .shape(new Shape(points), 64)
+                    .depthTestEnabled(false)
+                    .lineWidth(0)
+                    .fillColor(new Color("#7f7f7f"))
+                    .detail(faction.getFactionName() + " claimed WEAK land")
+                    .minDistance(10)
+                    .maxDistance(10000)
+                    .label(faction.getFactionName() + " claimed WEAK land")
+                    .position(new Vector3d(chunkToClaim.getX() * 16, 64, chunkToClaim.getZ() * 16))
+                    .build();
+        } else {
+            shapeMarker = ShapeMarker.builder()
+                    .shape(new Shape(points), 64)
+                    .depthTestEnabled(false)
+                    .lineWidth(0)
+                    .fillColor(new Color("#7f7f7f"))
+                    .detail(faction.getFactionName() + " claimed FULL land")
+                    .minDistance(10)
+                    .maxDistance(10000)
+                    .label(faction.getFactionName() + " claimed FULL land")
+                    .position(new Vector3d(chunkToClaim.getX() * 16, 64, chunkToClaim.getZ() * 16))
+                    .build();
+        }
+
+        // FOR INFO, is use markerSet.getMarkers().size() as the ID of the ShapeMarker
+        // Add the ShapeMarker ID in the related Hashmap (to eb able to remove it later more easily)
+        addBlueMapChunk(chunkToClaim, faction.getFactionMarkerSet().getMarkers().size());
+
+        // Put the new ShapeMarker in the MarkerSet
+        faction.getFactionMarkerSet().getMarkers().put("claimedLand " + faction.getFactionMarkerSet().getMarkers().size(), shapeMarker);
+
+        // Redraw all the marker on the map
+        System.out.println(BlueMapAPI.getInstance().isPresent());
+        BlueMapAPI.onEnable(api -> {
+            api.getWorld(Bukkit.getWorld("world")).ifPresent(world -> {
+                for (BlueMapMap map : world.getMaps()) {
+                    map.getMarkerSets().put("FactionMarkerSet" + faction.getFactionName() + " claims", faction.getFactionMarkerSet());
+                }
+            });
+        });
+
+        drawFactionOutsideLine(faction);
+    }
+
+    public void RemoveChunks(FactionObject faction, Chunk chunkToUnclaim) {
+        // Remove the ShapeMarker from the MarkerSet
+        faction.getFactionMarkerSet().remove("claimedLand " + getBluemapClaimedChunk().get(chunkToUnclaim));
+
+        // Remove the ShapeMarker from the related Hashmap
+        removeBlueMapChunk(chunkToUnclaim);
+
+        try {
+            // Redraw all the marker on the map
+            BlueMapAPI.onEnable(api -> {
+                api.getWorld(Bukkit.getWorld("world")).ifPresent(world -> {
+                    for (BlueMapMap map : world.getMaps()) {
+                        map.getMarkerSets().put("FactionMarkerSet" + faction.getFactionName() + " claims", faction.getFactionMarkerSet());
+                    }
+                });
+            });
+        } catch (Exception e) {
+            plugin.getLogger().severe("BlueMap integration failed: " + e.getMessage());
+        }
+    }
+    private void createLineMarker(FactionObject faction, double x1, double z1, double x2, double z2, int id) {
         Line borderLine = new Line(
                 new Vector3d(x1, 64, z1),
                 new Vector3d(x2, 64, z2)
         );
 
         LineMarker lineMarker = LineMarker.builder()
-                .label(factionName + " Border")
+                .label(faction.getFactionName() + " Border")
                 .line(borderLine) // Pass the Line object here
                 .lineWidth(3)
                 .lineColor(new Color(255, 255, 255, 1f))
@@ -34,21 +135,21 @@ public class FactionMapRenderService {
                 .maxDistance(10000)
                 .build();
 
-        markerSet.put(factionName + "_border_" + id, lineMarker);
+        faction.getFactionMarkerSet().put(faction.getFactionName() + "_border_" + id, lineMarker);
     }
 
-    public void drawFactionOutsideLine(){
+    public void drawFactionOutsideLine(FactionObject faction){
         World world = Bukkit.getWorld("world");
         if (world == null) return;
 
         // Remove all previous border markers to start fresh
-        markerSet.getMarkers().keySet().removeIf(key -> key.startsWith(factionName + "_border_"));
+        faction.getFactionMarkerSet().getMarkers().keySet().removeIf(key -> key.startsWith(faction.getFactionName() + "_border_"));
 
         // Just to keep track of each border (with ID's)
         int lineIdCount = 0;
 
         // Check each chunk of the faction
-        for (Chunk chunk : getClaimedChunks()) {
+        for (Chunk chunk : faction.getHardClaimedChunks()) {
 
             // Get the upper left corner
             int x0 = chunk.getX() * 16;
@@ -60,23 +161,23 @@ public class FactionMapRenderService {
 
             // Define the 4 edges of the chunk
             // North: (x0, z0) to (x1, z0)
-            if (!getClaimedChunks().contains(world.getChunkAt(chunk.getX(), chunk.getZ() - 1))) {
-                createLineMarker(x0, z0, x1, z0, lineIdCount++);
+            if (!faction.getHardClaimedChunks().contains(world.getChunkAt(chunk.getX(), chunk.getZ() - 1))) {
+                createLineMarker(faction, x0, z0, x1, z0, lineIdCount++);
             }
 
             // South: (x0, z1) to (x1, z1)
-            if (!this.getClaimedChunks().contains(world.getChunkAt(chunk.getX(), chunk.getZ() + 1))) {
-                createLineMarker(x0, z1, x1, z1, lineIdCount++);
+            if (!faction.getHardClaimedChunks().contains(world.getChunkAt(chunk.getX(), chunk.getZ() + 1))) {
+                createLineMarker(faction, x0, z1, x1, z1, lineIdCount++);
             }
 
             // West: (x0, z0) to (x0, z1)
-            if (!this.getClaimedChunks().contains(world.getChunkAt(chunk.getX() - 1, chunk.getZ()))) {
-                createLineMarker(x0, z0, x0, z1, lineIdCount++);
+            if (!faction.getHardClaimedChunks().contains(world.getChunkAt(chunk.getX() - 1, chunk.getZ()))) {
+                createLineMarker(faction, x0, z0, x0, z1, lineIdCount++);
             }
 
             // East: (x1, z0) to (x1, z1)
-            if (!this.getClaimedChunks().contains(world.getChunkAt(chunk.getX() + 1, chunk.getZ()))) {
-                createLineMarker(x1, z0, x1, z1, lineIdCount++);
+            if (!faction.getHardClaimedChunks().contains(world.getChunkAt(chunk.getX() + 1, chunk.getZ()))) {
+                createLineMarker(faction, x1, z0, x1, z1, lineIdCount++);
             }
         }
 
@@ -85,7 +186,7 @@ public class FactionMapRenderService {
             BlueMapAPI.onEnable(api -> {
                 api.getWorld(Bukkit.getWorld("world")).ifPresent(blueWorld -> {
                     for (BlueMapMap map : blueWorld.getMaps()) {
-                        map.getMarkerSets().put("my-marker-set-id", markerSet);
+                        map.getMarkerSets().put("my-marker-set-id", faction.getFactionMarkerSet());
                     }
                 });
             });

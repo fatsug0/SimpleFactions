@@ -1,7 +1,7 @@
 package com.gus.simpleFactions.RaidHandlers;
 
 import com.gus.simpleFactions.Enums.RaidState;
-import com.gus.simpleFactions.FactionHandlers.FactionObject;
+import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
 import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -44,14 +44,14 @@ public class RaidManager {
 
         // Check if the attacked chunks are in a WEAK state
         for (Chunk chunk : attackedChunks) {
-            if (!plugin.factionManager.playerFactionLink.get(sender.getUniqueId()).getClaimedChunks().contains(chunk)) {
+            if (!plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(sender.getUniqueId()).getHardClaimedChunks().contains(chunk)) {
                 // RAID CANT HAPPEN
                 sender.sendMessage(ChatColor.RED + "The selected chunks are not in a weak state !");
                 return false;
             }
         }
 
-        addRaidToFaction(defendingFaction, new RaidInfoObject(RaidState.WAITING, dateToCalendar(raidDate), plugin.factionManager.playerFactionLink.get(sender.getUniqueId()), attackedChunks));
+        addRaidToFaction(defendingFaction, new RaidInfoObject(RaidState.WAITING, dateToCalendar(raidDate), plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(sender.getUniqueId()), attackedChunks));
         return true;
     }
 

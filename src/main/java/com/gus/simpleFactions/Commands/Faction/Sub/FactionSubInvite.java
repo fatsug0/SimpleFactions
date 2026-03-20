@@ -46,12 +46,12 @@ public class FactionSubInvite implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length != 2 || !(sender instanceof Player player) || !plugin.factionManager.playerFactionLink.containsKey(player.getUniqueId())){
+        if (args.length != 2 || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())){
             sender.sendMessage(sendUsageError());
             return;
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) return;
-        plugin.factionManager.InvitePlayer(player.getUniqueId(), Objects.requireNonNull(Bukkit.getPlayer(args[1])).getUniqueId(), plugin.factionManager.playerFactionLink.get(player.getUniqueId()));
+        plugin.factionManager.factionMembershipService.InvitePlayer(player.getUniqueId(), Objects.requireNonNull(Bukkit.getPlayer(args[1])).getUniqueId(), plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()));
     }
 }

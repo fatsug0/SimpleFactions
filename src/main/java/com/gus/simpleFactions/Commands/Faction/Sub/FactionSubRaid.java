@@ -1,7 +1,7 @@
 package com.gus.simpleFactions.Commands.Faction.Sub;
 
 import com.gus.simpleFactions.Commands.Builders.CommandInterface;
-import com.gus.simpleFactions.FactionHandlers.FactionObject;
+import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
 import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -52,7 +52,7 @@ public class FactionSubRaid implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length < 5 || !args[args.length - 1].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.playerFactionLink.containsKey(player.getUniqueId())) {
+        if (args.length < 5 || !args[args.length - 1].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())) {
             sender.sendMessage(sendUsageError());
             return;
         }
@@ -60,7 +60,7 @@ public class FactionSubRaid implements CommandInterface {
         if (getPermission() != null && !player.hasPermission(getPermission())) return;
         
         FactionObject defendingFaction = null;
-        for (FactionObject faction : plugin.factionManager.existingFactions){
+        for (FactionObject faction : plugin.factionManager.factionMembershipService.getExistingFactions()){
             if (faction.getFactionName().equals(args[1])){
                 defendingFaction = faction;
                 break;

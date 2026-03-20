@@ -1,8 +1,9 @@
 package com.gus.simpleFactions;
 
 import com.gus.simpleFactions.Commands.Faction.FactionCommand;
+import com.gus.simpleFactions.EventListeners.ClaimedChunksChecker;
 import com.gus.simpleFactions.FactionHandlers.FactionManager;
-import com.gus.simpleFactions.Miscellaneous.MainEventListener;
+import com.gus.simpleFactions.EventListeners.MainEventListener;
 import com.gus.simpleFactions.Miscellaneous.PermissionManager;
 import com.gus.simpleFactions.Miscellaneous.TeleportManager;
 import com.gus.simpleFactions.RaidHandlers.RaidManager;
@@ -30,6 +31,7 @@ public final class SimpleFactions extends JavaPlugin {
         raidManager = new RaidManager(this);
 
         Bukkit.getPluginManager().registerEvents(new MainEventListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new ClaimedChunksChecker(this), this);
 
         System.out.println(getConfig().getBoolean("enable-bluemap-addon") ? "[+] BlueMap addon enabled !" : "[-] BlueMap addon disabled !");
 
