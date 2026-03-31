@@ -133,9 +133,9 @@ public class FactionSubAdmin implements CommandInterface {
         for (Player player : Bukkit.getOnlinePlayers()){
             if (player.getLocation().getChunk().equals(chunkToClaim)){
                 if (weakClaim){
-                    plugin.factionManager.factionLandService.getPlayerInProtectedChunks().put(player.getUniqueId(), PlayerChunkState.WEAK);
+                    plugin.factionManager.factionLandService.getPlayerChunkState().put(player.getUniqueId(), PlayerChunkState.WEAK);
                 } else {
-                    plugin.factionManager.factionLandService.getPlayerInProtectedChunks().put(player.getUniqueId(), PlayerChunkState.HARD);
+                    plugin.factionManager.factionLandService.getPlayerChunkState().put(player.getUniqueId(), PlayerChunkState.HARD);
                 }
             }
         }
@@ -208,7 +208,7 @@ public class FactionSubAdmin implements CommandInterface {
         // Change player state
         for (Player player : Bukkit.getOnlinePlayers()){
             if (player.getLocation().getChunk().equals(chunkToCheck)) {
-                plugin.factionManager.factionLandService.getPlayerInProtectedChunks().put(player.getUniqueId(), PlayerChunkState.WILDERNESS);
+                plugin.factionManager.factionLandService.getPlayerChunkState().put(player.getUniqueId(), PlayerChunkState.WILDERNESS);
             }
         }
 

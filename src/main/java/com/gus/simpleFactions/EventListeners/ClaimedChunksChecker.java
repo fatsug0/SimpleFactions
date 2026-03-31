@@ -24,17 +24,23 @@ public class ClaimedChunksChecker implements Listener {
 
     private final SimpleFactions plugin;
     public ClaimedChunksChecker(SimpleFactions plugin) {
+        System.out.println("Loaded ClaimedChunksChecker");
         this.plugin = plugin;
     }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent e) {
+        System.out.println("Block Break");
         // First check if it's a hard claim or a weak claim
         FactionObject chunkFaction = plugin.factionManager.factionLandService.getLinkedChunks().get(e.getBlock().getChunk()) == null ? null : plugin.factionManager.factionLandService.getLinkedChunks().get(e.getBlock().getChunk());
+        System.out.println(chunkFaction == null ? "NULL" : chunkFaction.getFactionName());
         if (chunkFaction == null) return;
 
-        if (plugin.factionManager.factionLandService.getPlayerInProtectedChunks().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.HARD) ||
-                plugin.factionManager.factionLandService.getPlayerInProtectedChunks().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.WEAK)) return;
+        System.out.println(chunkFaction.getFactionName());
+        System.out.println(plugin.factionManager.factionLandService.getPlayerChunkState().get(e.getPlayer().getUniqueId()) + "\n");
+
+        if (plugin.factionManager.factionLandService.getPlayerChunkState().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.HARD) ||
+                plugin.factionManager.factionLandService.getPlayerChunkState().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.WEAK)) return;
 
         //region Check Claim Chunk
         if (plugin.factionManager.factionHelperService.isChunkHardClaimed(chunkFaction.getHardClaimedChunks(), e.getBlock().getChunk())) {
@@ -73,8 +79,8 @@ public class ClaimedChunksChecker implements Listener {
         FactionObject chunkFaction = plugin.factionManager.factionLandService.getLinkedChunks().get(e.getBlock().getChunk()) == null ? null : plugin.factionManager.factionLandService.getLinkedChunks().get(e.getBlock().getChunk());
         if (chunkFaction == null) return;
 
-        if (plugin.factionManager.factionLandService.getPlayerInProtectedChunks().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.HARD) ||
-                plugin.factionManager.factionLandService.getPlayerInProtectedChunks().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.WEAK)) return;
+        if (plugin.factionManager.factionLandService.getPlayerChunkState().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.HARD) ||
+                plugin.factionManager.factionLandService.getPlayerChunkState().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.WEAK)) return;
 
         //region Check Claim Chunk
         if (plugin.factionManager.factionHelperService.isChunkHardClaimed(chunkFaction.getHardClaimedChunks(), e.getBlock().getChunk())) {
@@ -114,8 +120,8 @@ public class ClaimedChunksChecker implements Listener {
         FactionObject chunkFaction = plugin.factionManager.factionLandService.getLinkedChunks().get(e.getPlayer().getLocation().getChunk()) == null ? null : plugin.factionManager.factionLandService.getLinkedChunks().get(e.getPlayer().getLocation().getChunk());
         if (chunkFaction == null) return;
 
-        if (plugin.factionManager.factionLandService.getPlayerInProtectedChunks().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.HARD) ||
-                plugin.factionManager.factionLandService.getPlayerInProtectedChunks().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.WEAK)) return;
+        if (plugin.factionManager.factionLandService.getPlayerChunkState().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.HARD) ||
+                plugin.factionManager.factionLandService.getPlayerChunkState().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.WEAK)) return;
 
         //region Check Claim Chunk
         if (plugin.factionManager.factionHelperService.isChunkHardClaimed(chunkFaction.getHardClaimedChunks(), e.getPlayer().getLocation().getChunk())) {
@@ -161,7 +167,7 @@ public class ClaimedChunksChecker implements Listener {
                 }
             } else {
 
-                if (                plugin.factionManager.factionHelperService.isChunkHardClaimed(chunkFaction.getHardClaimedChunks(), e.getDamageSource().getCausingEntity().getLocation().getChunk())) {
+                if (plugin.factionManager.factionHelperService.isChunkHardClaimed(chunkFaction.getHardClaimedChunks(), e.getDamageSource().getCausingEntity().getLocation().getChunk())) {
                     if (!plugin.getConfig().getBoolean("faction.hard-claim.entity-damage")) {
                         Objects.requireNonNull(Bukkit.getPlayer(e.getDamageSource().getCausingEntity().getUniqueId())).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§4§lYou are in claimed land !"));
                         e.setCancelled(true);

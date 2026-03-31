@@ -7,10 +7,12 @@ import org.bukkit.Chunk;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -41,24 +43,30 @@ public class FactionHelperService {
         return getClaimedChunks.contains(chunk);
     }
 
+    public boolean PlayerIsInHisFaction(UUID uuid, Chunk chunkToCheck) {
+        return (plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(uuid) &&
+                plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(uuid).equals(plugin.factionManager.factionLandService.getLinkedChunks().get(chunkToCheck)));
+    }
+
     public void createTabTeam(UUID ownerUUID, String teamName, String prefix, ArrayList<String> colors) {
         if (prefix == null) prefix = teamName;
         Scoreboard scoreboard = Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard();
         Player owner = Bukkit.getPlayer(ownerUUID);
         if (owner == null) return;
 
-        // First create global team
-        Team globalTeam = scoreboard.registerNewTeam("global_" + plugin.factionManager.factionFormatterService.toTeamName(teamName));
-        String globalTeamPrefix = plugin.factionManager.factionFormatterService.useMiniMessage(" [" + prefix + "] ", colors);
-        globalTeam.setPrefix(globalTeamPrefix);
-        globalTeam.addEntry(owner.getName());
-
-        // Then create faction team
+        // Create faction team
         Team factionTeam = scoreboard.registerNewTeam("faction_" + plugin.factionManager.factionFormatterService.toTeamName(teamName));
-        factionTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.FOR_OWN_TEAM);
         String factionTeamPrefix = plugin.factionManager.factionFormatterService.useMiniMessage(" [" + prefix + "] ", colors);
         factionTeam.setPrefix(factionTeamPrefix);
         factionTeam.addEntry(owner.getName());
+    }
+
+    public void addPlayerToTabTeam(UUID playerUUID, String teamName) {
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player == null) return;
+        Team team = Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeam("faction_" + plugin.factionManager.factionFormatterService.toTeamName(teamName));
+        if (team == null) return;
+        team.addEntry(player.getName());
     }
 
     public Player checkPlayer(UUID playerUUID) {
@@ -77,23 +85,6 @@ public class FactionHelperService {
             plugin.getLogger().warning("Player with UUID " + playerUUID + " has never played on this server.");
             return null;
         }
-    }
-
-    public boolean CanInteractWithChunk(FactionObject faction, UUID playerUUID, Chunk chunk){
-
-        // Chunk is in wilderness, everyone can interact with it
-        if (!plugin.factionManager.factionLandService.getLinkedChunks().containsKey(chunk)) return true;
-
-        // Past this point, the chunk is claimed, need to determine by whom and if the player can interact with it
-        // The player has no faction, he cannot interact with it
-        if (!plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(playerUUID)) return false;
-
-        // Past this point, The player has a faction, but maybe different from the chunk he's standing in
-        // The player is in the same faction as the claimed chunk
-        if (plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(playerUUID).equals(plugin.factionManager.factionLandService.getLinkedChunks().get(chunk))) return true;
-
-        // Every outcome has been checked, but the faction is not equal as the claimed one, return false
-        return false;
     }
 
     public boolean factionNameExists(String factionName){

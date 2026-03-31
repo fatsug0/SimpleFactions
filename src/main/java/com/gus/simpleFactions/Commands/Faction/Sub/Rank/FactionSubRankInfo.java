@@ -49,6 +49,6 @@ public class FactionSubRankInfo implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) return;
-        player.sendMessage(plugin.factionManager.factionFormatterService.getAllRankInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId())));
+//        player.sendMessage(plugin.factionManager.factionFormatterService.getAllRankInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId())));
     }
 }

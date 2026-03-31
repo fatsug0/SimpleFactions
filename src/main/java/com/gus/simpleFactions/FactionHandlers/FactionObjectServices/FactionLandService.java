@@ -31,15 +31,15 @@ public class FactionLandService {
     }
 
 
-    private Map<UUID, PlayerChunkState> playerInProtectedChunks = new HashMap<>();
-    public Map<UUID, PlayerChunkState> getPlayerInProtectedChunks() {
-        return this.playerInProtectedChunks;
+    private Map<UUID, PlayerChunkState> playerChunkState = new HashMap<>();
+    public Map<UUID, PlayerChunkState> getPlayerChunkState() {
+        return this.playerChunkState;
     }
     public void addPlayerInProtectedChunks(UUID playerUUID, PlayerChunkState state) {
-        this.playerInProtectedChunks.put(playerUUID, state);
+        this.playerChunkState.put(playerUUID, state);
     }
     public void removePlayerInProtectedChunks(UUID playerUUID) {
-        this.playerInProtectedChunks.remove(playerUUID);
+        this.playerChunkState.remove(playerUUID);
     }
 
 
@@ -84,7 +84,9 @@ public class FactionLandService {
             faction.getHardClaimedChunks().add(chunkToClaim);
 
         } else if (faction.getWeakClaimedChunks().size() <= plugin.getConfig().getDouble("weak-amount-coefficient") * faction.getPower()) {
-            if (!plugin.getConfig().getBoolean("faction.object.weak-claims-enabled")) return;
+            if (!plugin.getConfig().getBoolean("faction.object.weak-claims-enabled")) {
+                return;
+            }
 
             // Link Raidable Chunk to Faction
             faction.getWeakClaimedChunks().add(chunkToClaim);
@@ -94,8 +96,6 @@ public class FactionLandService {
             player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "Your faction is out of chunks to claim !");
             return;
         }
-
-
 
         // Add Chunk in FactionManager claimedChunkCache (claimed or raidable doesn't matter)
         addLinkedChunk(chunkToClaim, faction);

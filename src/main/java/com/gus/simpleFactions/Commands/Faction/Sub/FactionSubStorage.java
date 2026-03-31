@@ -2,10 +2,13 @@ package com.gus.simpleFactions.Commands.Faction.Sub;
 
 import com.gus.simpleFactions.Commands.Builders.CommandInterface;
 import com.gus.simpleFactions.SimpleFactions;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class FactionSubStorage implements CommandInterface {
@@ -52,5 +55,7 @@ public class FactionSubStorage implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) return;
+
+        player.openInventory(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()).getFactionInv().getInventory());
     }
 }

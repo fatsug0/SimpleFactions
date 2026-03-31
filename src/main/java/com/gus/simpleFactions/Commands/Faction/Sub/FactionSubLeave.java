@@ -48,7 +48,6 @@ public class FactionSubLeave implements CommandInterface {
             return;
         }
 
-        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         plugin.factionManager.factionMembershipService.LeaveFaction(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), player.getUniqueId());
     }
 

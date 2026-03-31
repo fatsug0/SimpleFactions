@@ -75,27 +75,15 @@ public class FactionObject {
     }
 
 
-    private ArrayList<FactionRankObject> existingFactionRanks = new ArrayList<>();
-    public ArrayList<FactionRankObject> getExistingFactionRankObjects() {
-        return this.existingFactionRanks;
-    }
-    public void addExistingFactionRanks(FactionRankObject rank) {
-        this.existingFactionRanks.add(rank);
-    }
-    public void removeExistingFactionRanks(FactionRankObject rank) {
-        this.existingFactionRanks.remove(rank);
-    }
-
-
-    private Map<UUID, FactionRankObject> factionRanks = new HashMap<>();
-    public Map<UUID, FactionRankObject> getFactionRanks() {
+    private ArrayList<FactionRankObject> factionRanks = new ArrayList<>();
+    public ArrayList<FactionRankObject> getFactionRanks() {
         return this.factionRanks;
     }
-    public void addFactionRank(UUID player, FactionRankObject rank) {
-        this.factionRanks.put(player, rank);
+    public void addFactionRank(FactionRankObject rank) {
+        this.factionRanks.add(rank);
     }
-    public void removeFactionRank(UUID player) {
-        this.factionRanks.remove(player);
+    public void removeFactionRank(FactionRankObject rank) {
+        this.factionRanks.remove(rank);
     }
 
 
@@ -116,8 +104,15 @@ public class FactionObject {
         this.teamPrefix = teamPrefix;
     }
 
+
     private final MarkerSet factionMarkerSet;
     public MarkerSet getFactionMarkerSet() {
         return this.factionMarkerSet;
+    }
+
+
+    private final FactionInvetoryObject factionInv = new FactionInvetoryObject("Faction Storage", 9*6);
+    public FactionInvetoryObject getFactionInv() {
+        return this.factionInv;
     }
 }

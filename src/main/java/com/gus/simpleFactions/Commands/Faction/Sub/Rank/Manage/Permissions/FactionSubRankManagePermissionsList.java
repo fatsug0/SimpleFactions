@@ -49,6 +49,6 @@ public class FactionSubRankManagePermissionsList implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) return;
-        player.sendMessage(plugin.factionManager.factionFormatterService.SendRankPermissionsInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[4]));
+//        player.sendMessage(plugin.factionManager.factionFormatterService.SendRankPermissionsInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[4]));
     }
 }

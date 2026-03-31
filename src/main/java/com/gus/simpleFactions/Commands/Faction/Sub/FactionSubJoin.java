@@ -44,12 +44,11 @@ public class FactionSubJoin implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length != 2 || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())){
+        if (args.length != 2 || !(sender instanceof Player player)){
             sender.sendMessage(sendUsageError());
             return;
         }
 
-        if (getPermission() != null && !player.hasPermission(getPermission())) return;
-        plugin.factionManager.factionMembershipService.JoinFaction(player.getUniqueId(), plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()));
+        plugin.factionManager.factionMembershipService.JoinFaction(player.getUniqueId(), args[1]);
     }
 }

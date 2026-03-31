@@ -6,6 +6,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
 
@@ -54,8 +56,19 @@ public class FactionMembershipService {
         this.pendingFactionInvites.remove(invite);
     }
 
+    private HashMap<UUID, Inventory> currentFactionInv = new HashMap<>();
+    public HashMap<UUID, Inventory> getCurrentFactionInv() {
+        return this.currentFactionInv;
+    }
+    public void addCurrentFactionInv(UUID playerUUID, Inventory inv) {
+        this.currentFactionInv.put(playerUUID, inv);
+    }
+    public void removeCurrentFactionInv(UUID playerUUID) {
+        this.currentFactionInv.remove(playerUUID);
+    }
 
-    public void KickPlayer(FactionObject faction, UUID playerUUID) {
+
+    public void KickPlayer(FactionObject faction, UUID playerUUID, boolean sendMsg) {
         Player player = plugin.factionManager.factionHelperService.checkPlayer(playerUUID);
         if (player == null) {
             System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
@@ -73,7 +86,7 @@ public class FactionMembershipService {
         // Remove him from the faction, Manager side
         removePlayerFactionLink(playerUUID);
 
-        player.sendMessage("§2You have been kicked of the faction: " + faction.getFactionName() + " !");
+        if (sendMsg) player.sendMessage("§2You have been kicked of the faction: " + faction.getFactionName() + " !");
     }
 
     public void LeaveFaction(FactionObject faction, UUID playerUUID) {
@@ -183,47 +196,62 @@ public class FactionMembershipService {
         player.sendMessage("§2You have, set the home of your faction !");
     }
 
-    public void JoinFaction(UUID playerUUID, FactionObject faction){
+    public void JoinFaction(UUID playerUUID, String factionName){
         // Check if an invitation is pending
         for (FactionInvite invite : pendingFactionInvites) {
-            if (invite.invitingFaction.equals(faction) && invite.invitedPlayer.equals(playerUUID)) {
+            if (invite.invitingFaction.getFactionName().equals(factionName) && invite.invitedPlayer.equals(playerUUID)) {
                 // If the player already has a faction, kick them from it
                 if (playerFactionLink.containsKey(playerUUID)){
-                    KickPlayer(playerFactionLink.get(playerUUID), playerUUID);
+                    KickPlayer(playerFactionLink.get(playerUUID), playerUUID, false);
                 }
 
                 // Add player in the faction, Faction side
-                faction.getFactionMembers().add(playerUUID);
+                invite.invitingFaction.getFactionMembers().add(playerUUID);
 
                 // Add player in the faction, Manager side
-                playerFactionLink.put(playerUUID, faction);
+                playerFactionLink.put(playerUUID, invite.invitingFaction);
 
                 // Add power for the faction
-                faction.setPower(faction.getPower() + plugin.getConfig().getInt("faction.object.base-faction-power-per-member"));
+                invite.invitingFaction.setPower(invite.invitingFaction.getPower() + plugin.getConfig().getInt("faction.object.base-faction-power-per-member"));
+
+                // Add player to the team
+                plugin.factionManager.factionHelperService.addPlayerToTabTeam(playerUUID, invite.invitingFaction.getFactionName());
+
+                plugin.factionManager.factionRankService.AddPlayerToRank(invite.invitingFaction, plugin.factionManager.factionHelperService.checkPlayer(playerUUID), "MEMBER");
+
+                plugin.factionManager.factionHelperService.checkPlayer(playerUUID).sendMessage(ChatColor.GREEN + ChatColor.BOLD.toString() + "You have joined the faction " + invite.invitingFaction.getFactionName() + " !");
                 return;
             }
         }
         plugin.factionManager.factionHelperService.checkPlayer(playerUUID).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You have not been invited to join this faction");
     }
 
-    public void InvitePlayer(UUID senderUUID, UUID playerUUID, FactionObject invitedFaction){
+    public void InvitePlayer(UUID senderUUID, UUID playerUUID, FactionObject invitingFaction){
         for (FactionInvite invite : pendingFactionInvites){
-            if (invite.invitingFaction.equals(invitedFaction) && invite.invitedPlayer.equals(playerUUID)) {
+            if (invite.invitingFaction.equals(invitingFaction) && invite.invitedPlayer.equals(playerUUID)) {
                 if (plugin.factionManager.factionHelperService.checkPlayer(senderUUID) == null) continue;
                 plugin.factionManager.factionHelperService.checkPlayer(senderUUID).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "This player already has been invited to join your faction");
                 return;
             }
         }
-        pendingFactionInvites.add(new FactionInvite(playerUUID, invitedFaction));
+        pendingFactionInvites.add(new FactionInvite(playerUUID, invitingFaction));
 
         // Send confirmations
         if (plugin.factionManager.factionHelperService.checkPlayer(playerUUID) != null)
             plugin.factionManager.factionHelperService.checkPlayer(playerUUID).sendMessage(
-                    ChatColor.GREEN + ChatColor.BOLD.toString() + "You have been invited to join " + invitedFaction.getFactionName() + " !");
+                    ChatColor.GREEN + ChatColor.BOLD.toString() + "You have been invited to join " + invitingFaction.getFactionName() + " !");
 
         if (plugin.factionManager.factionHelperService.checkPlayer(senderUUID) != null &&
                 plugin.factionManager.factionHelperService.checkPlayer(playerUUID) != null)
             plugin.factionManager.factionHelperService.checkPlayer(senderUUID).sendMessage(
-                    ChatColor.GREEN + ChatColor.BOLD.toString() + "You have invited " + Bukkit.getPlayer(playerUUID).getName() + " to join " + invitedFaction.getFactionName() + " !");
+                    ChatColor.GRAY + "You have invited " + ChatColor.ITALIC + Bukkit.getPlayer(playerUUID).getName() + ChatColor.RESET + ChatColor.GRAY + " to join " + invitingFaction.getFactionName() + " !");
+    }
+
+    public ArrayList<FactionObject> getPlayerInvites(UUID playerUUID){
+        ArrayList<FactionObject> factions = new ArrayList<>();
+        for (FactionInvite invite : pendingFactionInvites){
+            if (invite.invitedPlayer.equals(playerUUID)) factions.add(invite.invitingFaction);
+        }
+        return factions;
     }
 }

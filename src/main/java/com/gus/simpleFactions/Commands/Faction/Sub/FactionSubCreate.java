@@ -52,8 +52,6 @@ public class FactionSubCreate implements CommandInterface {
             return;
         }
 
-        if (getPermission() != null && !player.hasPermission(getPermission())) return;
-
         plugin.factionManager.CreateFaction(player.getUniqueId(), args[1]);
     }
 }

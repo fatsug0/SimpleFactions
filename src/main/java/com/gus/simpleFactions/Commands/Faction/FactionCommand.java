@@ -89,19 +89,24 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
         //region Special cases for onTabComplete
         switch (command.getName()) {
             case "invite":
-                ArrayList<Player> invitePlayers = new ArrayList<>(plugin.getServer().getOnlinePlayers());
 
-                // Get all online players and offline players
-                for (OfflinePlayer offlinePlayer : plugin.getServer().getOfflinePlayers()) {
-                    invitePlayers.add(offlinePlayer.getPlayer());
+                // Get all players online on the server
+                ArrayList<Player> invitePlayers = new ArrayList<>(Bukkit.getOnlinePlayers());
+
+                // Add the offline players to the list
+                for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
+                    if (offlinePlayer.hasPlayedBefore() && !invitePlayers.contains(offlinePlayer.getPlayer()) && offlinePlayer.getPlayer() != null) {
+                        invitePlayers.add(offlinePlayer.getPlayer());
+                    }
                 }
 
+                System.out.println(invitePlayers.toString());
                 // Remove the sender from the list
                 invitePlayers.remove(player);
 
 
                 // Remove all players already in the faction
-                for (UUID factionPlayerUUID : plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()).getFactionMembers()){
+                for (UUID factionPlayerUUID : plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()).getFactionMembers()) {
                     if (checkPlayer(factionPlayerUUID) != null) invitePlayers.remove(checkPlayer(factionPlayerUUID));
                 }
 
@@ -130,27 +135,26 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
                 return kickPlayersNames;
 
             case "add":
-                if (command.getPermission().equalsIgnoreCase("simplefactions.rank.manage.player.add")){
+                if (command.getPermission().equalsIgnoreCase("simplefactions.rank.manage.player.add")) {
                     // Get all players in the faction
                     FactionObject playerFaction = plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId());
                     ArrayList<UUID> factionPlayers = new ArrayList<>(playerFaction.getFactionMembers());
 
                     // Remove all players already in the rank
-                    for (UUID factionPlayerUUID : factionPlayers){
-                        if (playerFaction.getFactionRanks().get(factionPlayerUUID).getRankName().equalsIgnoreCase(args[args.length - 2])) {
-                            factionPlayers.remove(factionPlayerUUID);
-                        }
+                    for (UUID factionPlayerUUID : plugin.factionManager.factionRankService.getRank(playerFaction, args[args.length - 2]).getRankMembers()) {
+                        factionPlayers.remove(factionPlayerUUID);
                     }
 
                     // Transform all players into strings (their names)
                     ArrayList<String> factionPlayersNames = new ArrayList<>();
                     for (UUID factionPlayer : factionPlayers) {
-                        if (checkPlayer(factionPlayer) != null) factionPlayersNames.add(checkPlayer(factionPlayer).getName());
+                        if (checkPlayer(factionPlayer) != null)
+                            factionPlayersNames.add(checkPlayer(factionPlayer).getName());
                     }
 
                     return factionPlayersNames;
 
-                } else if (command.getPermission().equalsIgnoreCase("simplefactions.rank.manage.permissions.add")){
+                } else if (command.getPermission().equalsIgnoreCase("simplefactions.rank.manage.permissions.add")) {
                     // Get all permissions
 
                     // Remove all permissions already in the rank
@@ -159,11 +163,11 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
                 }
 
             case "remove":
-                if (command.getPermission().equalsIgnoreCase("simplefactions.rank.manage.player.remove")){
+                if (command.getPermission().equalsIgnoreCase("simplefactions.rank.manage.player.remove")) {
                     // Get all players in the rank
 
                     // Transform all players into strings (their names)
-                } else if (command.getPermission().equalsIgnoreCase("simplefactions.rank.manage.permissions.remove")){
+                } else if (command.getPermission().equalsIgnoreCase("simplefactions.rank.manage.permissions.remove")) {
                     // Get all permissions in the rank
                 } else {
                     return new ArrayList<>(command.getSubCommands().keySet());
@@ -172,7 +176,7 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
             case "toggle":
                 switch (args.length) {
                     case 2:
-                        if (command.getPermission().equalsIgnoreCase("simplefactions.toggle")){
+                        if (command.getPermission().equalsIgnoreCase("simplefactions.toggle")) {
                             ArrayList<String> factionNames = new ArrayList<>();
                             for (FactionObject faction : plugin.factionManager.factionMembershipService.getExistingFactions()) {
                                 factionNames.add(faction.getFactionName());
@@ -186,9 +190,18 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
                     case 4:
                         return Arrays.asList("enable", "disable");
                 }
-                }
 
-        //endregion
+            case "join":
+                ArrayList<String> joinableFactions = new ArrayList<>();
+                for (FactionObject faction : plugin.factionManager.factionMembershipService.getPlayerInvites(player.getUniqueId())) {
+                    joinableFactions.add(faction.getFactionName());
+                }
+                return joinableFactions;
+
+            default:
+                break;
+        }
+
 
         return new ArrayList<>(command.getSubCommands().keySet());
     }

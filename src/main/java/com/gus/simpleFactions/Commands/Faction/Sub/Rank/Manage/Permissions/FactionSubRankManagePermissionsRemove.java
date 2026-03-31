@@ -56,6 +56,8 @@ public class FactionSubRankManagePermissionsRemove implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) return;
-        plugin.factionManager.factionRankService.RemovePermissionRank(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[4], permissions);
+        for (String permission : permissions) {
+            plugin.factionManager.factionRankService.RemovePermissionRank(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[4], permission);
+        }
     }
 }
