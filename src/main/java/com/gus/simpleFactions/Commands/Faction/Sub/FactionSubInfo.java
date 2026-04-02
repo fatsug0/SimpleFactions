@@ -48,7 +48,6 @@ public class FactionSubInfo implements CommandInterface {
             return;
         }
 
-        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         plugin.factionManager.factionFormatterService.SendFactionInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), player.getUniqueId());
     }
 }

@@ -2,6 +2,7 @@ package com.gus.simpleFactions.Commands.Faction.Sub.Rank.Manage.Permissions;
 
 import com.gus.simpleFactions.Commands.Builders.CommandInterface;
 import com.gus.simpleFactions.SimpleFactions;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -48,7 +49,11 @@ public class FactionSubRankManagePermissionsList implements CommandInterface {
             return;
         }
 
-        if (getPermission() != null && !player.hasPermission(getPermission())) return;
-//        player.sendMessage(plugin.factionManager.factionFormatterService.SendRankPermissionsInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[4]));
+        if (getPermission() != null && !player.hasPermission(getPermission())) {
+            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            return;
+        }
+
+        //        player.sendMessage(plugin.factionManager.factionFormatterService.SendRankPermissionsInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[4]));
     }
 }

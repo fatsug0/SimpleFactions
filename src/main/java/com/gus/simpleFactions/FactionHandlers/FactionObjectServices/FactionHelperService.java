@@ -1,18 +1,19 @@
 package com.gus.simpleFactions.FactionHandlers.FactionObjectServices;
 
+import com.gus.simpleFactions.Enums.PlayerChunkState;
 import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
 import com.gus.simpleFactions.SimpleFactions;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -94,5 +95,38 @@ public class FactionHelperService {
             }
         }
         return false;
+    }
+
+    public void updatePlayerChunkState(UUID playerUUID, Chunk chunkToCheck){
+        // Check if chunk is claimed
+        if (plugin.factionManager.factionLandService.getLinkedChunks().containsKey(chunkToCheck)) {
+            // Your faction claim
+            if (plugin.factionManager.factionHelperService.PlayerIsInHisFaction(playerUUID, chunkToCheck)) {
+                // Hard claimed
+                if (plugin.factionManager.factionHelperService.isChunkHardClaimed(plugin.factionManager.factionLandService.getLinkedChunks().get(chunkToCheck).getHardClaimedChunks(), chunkToCheck)) {
+                    if (plugin.factionManager.factionLandService.getPlayerChunkState().get(playerUUID) != PlayerChunkState.HARD) {
+                        Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§6§lWelcome home (hard claim) !"));
+                        plugin.factionManager.factionLandService.getPlayerChunkState().put(playerUUID, PlayerChunkState.HARD);
+                    }
+                } else { // Weak claimed
+                    if (plugin.factionManager.factionLandService.getPlayerChunkState().get(playerUUID) != PlayerChunkState.WEAK) {
+                        Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§6§lWelcome home (weak claim) !"));
+                        plugin.factionManager.factionLandService.getPlayerChunkState().put(playerUUID, PlayerChunkState.WEAK);
+                    }
+                }
+
+            } else { // Enemy faction claim
+                if (plugin.factionManager.factionLandService.getPlayerChunkState().get(playerUUID) != PlayerChunkState.ENEMY) {
+                    Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§4§lYou have entered the " + plugin.factionManager.factionLandService.getLinkedChunks().get(chunkToCheck).getFactionName() + " faction !"));
+                    plugin.factionManager.factionLandService.getPlayerChunkState().put(playerUUID, PlayerChunkState.ENEMY);
+                }
+            }
+        } else { // Not claimed, wilderness
+            if (plugin.factionManager.factionLandService.getPlayerChunkState().get(playerUUID) != PlayerChunkState.WILDERNESS) {
+                Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§2§lYou have entered wilderness !"));
+                plugin.factionManager.factionLandService.getPlayerChunkState().put(playerUUID, PlayerChunkState.WILDERNESS);
+            }
+        }
+
     }
 }

@@ -26,7 +26,7 @@ public class FactionSubHome implements CommandInterface {
 
     @Override
     public String getPermission() {
-        return "simplefactions";
+        return null;
     }
 
     @Override
@@ -48,7 +48,6 @@ public class FactionSubHome implements CommandInterface {
             return;
         }
 
-        if (!player.hasPermission(getPermission())) return;
         plugin.factionManager.factionMembershipService.TeleportHome(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), player.getUniqueId());
     }
 }

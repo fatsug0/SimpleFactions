@@ -48,7 +48,6 @@ public class FactionSubHelp implements CommandInterface {
             return;
         }
 
-        if (getPermission() != null && !player.hasPermission(getPermission())) return;
         plugin.factionManager.factionFormatterService.SendHelp(player.getUniqueId());
     }
 }

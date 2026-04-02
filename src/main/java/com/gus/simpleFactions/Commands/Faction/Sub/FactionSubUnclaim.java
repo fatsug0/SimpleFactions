@@ -2,6 +2,7 @@ package com.gus.simpleFactions.Commands.Faction.Sub;
 
 import com.gus.simpleFactions.Commands.Builders.CommandInterface;
 import com.gus.simpleFactions.SimpleFactions;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -48,7 +49,11 @@ public class FactionSubUnclaim implements CommandInterface {
             return;
         }
 
-        if (getPermission() != null && !player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) {
+            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            return;
+        }
+
         plugin.factionManager.factionLandService.UnClaimLand(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), player.getUniqueId());
     }
 }

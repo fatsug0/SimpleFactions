@@ -21,8 +21,15 @@ public class RaidManager {
         this.plugin = plugin;
     }
 
-    public HashMap<FactionObject, ArrayList<RaidInfoObject>> waitingRaids = new HashMap<>();
-    public HashMap<FactionObject, ArrayList<RaidInfoObject>> currentRaids = new HashMap<>();
+    private HashMap<FactionObject, ArrayList<RaidInfoObject>> waitingRaids = new HashMap<>();
+    public HashMap<FactionObject, ArrayList<RaidInfoObject>> getWaitingRaids() {
+        return waitingRaids;
+    }
+
+    private HashMap<FactionObject, ArrayList<RaidInfoObject>> currentRaids = new HashMap<>();
+    public HashMap<FactionObject, ArrayList<RaidInfoObject>> getCurrentRaids() {
+        return currentRaids;
+    }
 
     private final int TIME_FOR_PREP_PHASE = 120 * 20;
     private final int TIME_FOR_HOLD_GROUNDS_PHASE = 120 * 20;
@@ -31,28 +38,55 @@ public class RaidManager {
 
     public BukkitTask task;
 
-    public boolean SendRaidDeclaration(Player sender, ArrayList<Chunk> attackedChunks, FactionObject defendingFaction, String raidDate) {
+    private HashMap<FactionObject, ArrayList<SelectedChunk>> currentFactionSelection = new HashMap<>();
+    private record SelectedChunk(FactionObject defendingFaction, Chunk chunk) {}
+
+    public void addCurrentFactionSelection(FactionObject attackingFaction, FactionObject defendingFaction, Chunk chunk, Player sender) {
+        if (currentFactionSelection.containsKey(attackingFaction)) {
+            ArrayList<SelectedChunk> selectedChunks = currentFactionSelection.get(attackingFaction);
+            for (SelectedChunk selectedChunk : selectedChunks) {
+                if (selectedChunk.defendingFaction.equals(defendingFaction) && selectedChunk.chunk.equals(chunk)) {
+                    sender.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You already selected this chunk !");
+                    return;
+                }
+            }
+            selectedChunks.add(new SelectedChunk(defendingFaction, chunk));
+        } else {
+            currentFactionSelection.put(attackingFaction, new ArrayList<>(List.of(new SelectedChunk(defendingFaction, chunk))));
+        }
+    }
+
+    public void removeCurrentFactionSelection(FactionObject faction) {
+        currentFactionSelection.remove(faction);
+    }
+
+    public void SendRaidDeclaration(Player sender, FactionObject attackingFaction, FactionObject defendingFaction, String raidDate) {
         for (RaidInfoObject raidInfo : currentRaids.get(defendingFaction)) {
 
             // Check if the defending faction doesn't already have a raid going on this date
             if (dateToCalendar(raidDate) != null && raidInfo.getRaidDate().get(Calendar.DAY_OF_YEAR) == (dateToCalendar(raidDate).get(Calendar.DAY_OF_YEAR))) {
                 // RAID CANT HAPPEN
-                sender.sendMessage(ChatColor.RED + "This faction is already being attacked at this date !\n Change it !");
-                return false;
+                sender.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "This faction is already being attacked at this date !\n Change it !");
+                return;
             }
         }
 
-        // Check if the attacked chunks are in a WEAK state
-        for (Chunk chunk : attackedChunks) {
-            if (!plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(sender.getUniqueId()).getHardClaimedChunks().contains(chunk)) {
-                // RAID CANT HAPPEN
-                sender.sendMessage(ChatColor.RED + "The selected chunks are not in a weak state !");
-                return false;
+        // Check if any chunks are selected
+        if (!currentFactionSelection.containsKey(attackingFaction) || currentFactionSelection.get(attackingFaction).isEmpty()) {
+            sender.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You haven't selected any chunks");
+            return;
+        }
+
+        // Create attacked chunks arraylist
+        ArrayList<Chunk> attackedChunks = new ArrayList<>();
+        for (SelectedChunk selectedChunk : currentFactionSelection.get(attackingFaction)) {
+            if (selectedChunk.defendingFaction.equals(defendingFaction)) {
+                attackedChunks.add(selectedChunk.chunk);
             }
         }
+
 
         addRaidToFaction(defendingFaction, new RaidInfoObject(RaidState.WAITING, dateToCalendar(raidDate), plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(sender.getUniqueId()), attackedChunks));
-        return true;
     }
 
     public void StartRaidPrepPhase(RaidInfoObject raidInfo, FactionObject defendingFaction){

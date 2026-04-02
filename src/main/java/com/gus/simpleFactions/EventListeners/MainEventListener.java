@@ -2,11 +2,9 @@ package com.gus.simpleFactions.EventListeners;
 
 import com.gus.simpleFactions.Enums.PlayerChunkState;
 import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
+import com.gus.simpleFactions.FactionHandlers.Objects.FactionRankObject;
 import com.gus.simpleFactions.SimpleFactions;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,6 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 
 import java.util.*;
@@ -29,7 +28,7 @@ public class MainEventListener implements Listener {
     public void onPlayerMove(PlayerMoveEvent e){
 
         // Update player chunk state
-        if (e.getTo() != null && !e.getFrom().getChunk().equals(e.getTo().getChunk())) UpdatePlayerChunkState(e.getPlayer().getUniqueId(), e.getTo().getChunk());
+        if (e.getTo() != null && !e.getFrom().getChunk().equals(e.getTo().getChunk())) plugin.factionManager.factionHelperService.updatePlayerChunkState(e.getPlayer().getUniqueId(), e.getTo().getChunk());
     }
 
     @EventHandler
@@ -39,13 +38,31 @@ public class MainEventListener implements Listener {
         plugin.factionManager.factionLandService.getPlayerChunkState().put(e.getPlayer().getUniqueId(), PlayerChunkState.PROTECTED);
 
         // Update player chunk state
-        UpdatePlayerChunkState(e.getPlayer().getUniqueId(), e.getPlayer().getLocation().getChunk());
+        plugin.factionManager.factionHelperService.updatePlayerChunkState(e.getPlayer().getUniqueId(), e.getPlayer().getLocation().getChunk());
 
-        // Set player rank in tab (if in any)
-        if (plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(e.getPlayer().getUniqueId()) != null){
-            var scoreboard = Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard();
-            scoreboard.getTeams().forEach(t -> t.removeEntry(e.getPlayer().getName()));
-            Objects.requireNonNull(scoreboard.getTeam("faction" + plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(e.getPlayer().getUniqueId()).getFactionName())).addEntry(e.getPlayer().getName());
+        // Give back players permissions from their faction rank
+        if (plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(e.getPlayer().getUniqueId())) {
+            System.out.println("PLAYER HAS A FACTION");
+            FactionObject faction = plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(e.getPlayer().getUniqueId());
+            for (String perm : plugin.factionManager.factionRankService.getRank(faction, faction.getSavedFactionRanks().get(e.getPlayer().getUniqueId())).getPermissions()) {
+                System.out.println("GIVING PERM TO PLAYER : " + perm);
+                plugin.factionManager.factionRankService.AddPermToPlayer(e.getPlayer().getUniqueId(), perm);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent e){
+        // Save player tab team to faction
+        if (plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(e.getPlayer().getUniqueId())) {
+            FactionObject faction = plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(e.getPlayer().getUniqueId());
+            for (FactionRankObject factionRank : faction.getFactionRanks()) {
+                if (factionRank.getRankMembers().contains(e.getPlayer().getUniqueId())) {
+                    faction.addSavedFactionRank(e.getPlayer().getUniqueId(), factionRank.getRankName());
+                    plugin.factionManager.factionRankService.removeAttachment(e.getPlayer().getUniqueId());
+                    break;
+                }
+            }
         }
     }
 
@@ -99,44 +116,10 @@ public class MainEventListener implements Listener {
                 plugin.factionManager.factionLandService.addPlayerInProtectedChunks(onlinePlayer.getUniqueId(), PlayerChunkState.PROTECTED);
 
                 // Update player chunk state
-                UpdatePlayerChunkState(onlinePlayer.getUniqueId(), onlinePlayer.getLocation().getChunk());
+                plugin.factionManager.factionHelperService.updatePlayerChunkState(onlinePlayer.getUniqueId(), onlinePlayer.getLocation().getChunk());
             }
         }
     }
 
-    private void UpdatePlayerChunkState(UUID playerUUID, Chunk chunkToCheck){
-        // Check if chunk is claimed
-        if (plugin.factionManager.factionLandService.getLinkedChunks().containsKey(chunkToCheck)) {
-            System.out.println("CHUNK IS CLAIMED");
-            System.out.println(plugin.factionManager.factionHelperService.PlayerIsInHisFaction(playerUUID, chunkToCheck) + "\n");
-            // Your faction claim
-            if (plugin.factionManager.factionHelperService.PlayerIsInHisFaction(playerUUID, chunkToCheck)) {
-                // Hard claimed
-                if (plugin.factionManager.factionHelperService.isChunkHardClaimed(plugin.factionManager.factionLandService.getLinkedChunks().get(chunkToCheck).getHardClaimedChunks(), chunkToCheck)) {
-                    if (plugin.factionManager.factionLandService.getPlayerChunkState().get(playerUUID) != PlayerChunkState.HARD) {
-                        Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§6§lWelcome home (hard claim) !"));
-                        plugin.factionManager.factionLandService.getPlayerChunkState().put(playerUUID, PlayerChunkState.HARD);
-                    }
-                } else { // Weak claimed
-                    if (plugin.factionManager.factionLandService.getPlayerChunkState().get(playerUUID) != PlayerChunkState.WEAK) {
-                        Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§6§lWelcome home (weak claim) !"));
-                        plugin.factionManager.factionLandService.getPlayerChunkState().put(playerUUID, PlayerChunkState.WEAK);
-                    }
-                }
 
-            } else { // Enemy faction claim
-                if (plugin.factionManager.factionLandService.getPlayerChunkState().get(playerUUID) != PlayerChunkState.ENEMY) {
-                    Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§4§lYou have entered the " + plugin.factionManager.factionLandService.getLinkedChunks().get(chunkToCheck).getFactionName() + " faction !"));
-                    plugin.factionManager.factionLandService.getPlayerChunkState().put(playerUUID, PlayerChunkState.ENEMY);
-                }
-            }
-        } else { // Not claimed, wilderness
-            if (plugin.factionManager.factionLandService.getPlayerChunkState().get(playerUUID) != PlayerChunkState.WILDERNESS) {
-                Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§2§lYou have entered wilderness !"));
-                plugin.factionManager.factionLandService.getPlayerChunkState().put(playerUUID, PlayerChunkState.WILDERNESS);
-            }
-        }
-
-        System.out.println(plugin.factionManager.factionLandService.getPlayerChunkState().get(playerUUID));
-    }
 }

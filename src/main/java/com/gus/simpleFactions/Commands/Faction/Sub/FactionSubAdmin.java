@@ -12,6 +12,7 @@ import de.bluecolored.bluemap.api.markers.ShapeMarker;
 import de.bluecolored.bluemap.api.math.Color;
 import de.bluecolored.bluemap.api.math.Shape;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -61,7 +62,10 @@ public class FactionSubAdmin implements CommandInterface {
             return;
         }
 
-        if (getPermission() != null && !player.hasPermission(getPermission())) return;
+        if (getPermission() != null && !player.hasPermission(getPermission())) {
+            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            return;
+        }
 
         switch (args[0].toLowerCase()) {
             case "vanish":

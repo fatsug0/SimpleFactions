@@ -2,6 +2,7 @@ package com.gus.simpleFactions.FactionHandlers.Objects;
 
 import de.bluecolored.bluemap.api.markers.MarkerSet;
 import org.bukkit.*;
+import org.bukkit.inventory.Inventory;
 
 
 import java.util.*;
@@ -86,6 +87,17 @@ public class FactionObject {
         this.factionRanks.remove(rank);
     }
 
+    private HashMap<UUID, String> savedFactionRanks = new HashMap<>();
+    public HashMap<UUID, String> getSavedFactionRanks() {
+        return this.savedFactionRanks;
+    }
+    public void addSavedFactionRank(UUID player, String rank) {
+        this.savedFactionRanks.put(player, rank);
+    }
+    public void removeSavedFactionRank(UUID player) {
+        this.savedFactionRanks.remove(player);
+    }
+
 
     private int power;
     public int getPower() {
@@ -111,8 +123,8 @@ public class FactionObject {
     }
 
 
-    private final FactionInvetoryObject factionInv = new FactionInvetoryObject("Faction Storage", 9*6);
-    public FactionInvetoryObject getFactionInv() {
+    private final Inventory factionInv = Bukkit.createInventory(null, 9*6, "Faction Storage");
+    public Inventory getFactionInv() {
         return this.factionInv;
     }
 }

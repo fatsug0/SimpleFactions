@@ -2,6 +2,7 @@ package com.gus.simpleFactions.Commands.Faction.Sub.Rank;
 
 import com.gus.simpleFactions.Commands.Builders.CommandInterface;
 import com.gus.simpleFactions.SimpleFactions;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -48,7 +49,6 @@ public class FactionSubRankInfo implements CommandInterface {
             return;
         }
 
-        if (getPermission() != null && !player.hasPermission(getPermission())) return;
-//        player.sendMessage(plugin.factionManager.factionFormatterService.getAllRankInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId())));
+        //        player.sendMessage(plugin.factionManager.factionFormatterService.getAllRankInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId())));
     }
 }

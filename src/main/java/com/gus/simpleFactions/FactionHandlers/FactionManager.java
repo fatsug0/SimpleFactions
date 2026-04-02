@@ -5,8 +5,8 @@ import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
 import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 public class FactionManager {
@@ -49,6 +49,7 @@ public class FactionManager {
         Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).sendMessage("You have created a new faction: " + factionName + " !");
 
         plugin.factionManager.factionRankService.CreateFactionRank(newFaction, "OWNER", Objects.requireNonNull(Bukkit.getPlayer(playerUUID)));
+        plugin.factionManager.factionRankService.AddPlayerToRank(newFaction, Objects.requireNonNull(Bukkit.getPlayer(playerUUID)), "OWNER");
         for (String perm : new ArrayList<>(List.of(
                 "simplefactions.invite",
                 "simplefactions.kick",

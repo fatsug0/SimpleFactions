@@ -8,7 +8,9 @@ import com.gus.simpleFactions.SimpleFactions;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -19,28 +21,25 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Objects;
+import java.util.UUID;
 
 public class ClaimedChunksChecker implements Listener {
 
     private final SimpleFactions plugin;
     public ClaimedChunksChecker(SimpleFactions plugin) {
-        System.out.println("Loaded ClaimedChunksChecker");
         this.plugin = plugin;
     }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent e) {
-        System.out.println("Block Break");
         // First check if it's a hard claim or a weak claim
         FactionObject chunkFaction = plugin.factionManager.factionLandService.getLinkedChunks().get(e.getBlock().getChunk()) == null ? null : plugin.factionManager.factionLandService.getLinkedChunks().get(e.getBlock().getChunk());
-        System.out.println(chunkFaction == null ? "NULL" : chunkFaction.getFactionName());
         if (chunkFaction == null) return;
 
-        System.out.println(chunkFaction.getFactionName());
-        System.out.println(plugin.factionManager.factionLandService.getPlayerChunkState().get(e.getPlayer().getUniqueId()) + "\n");
+//        if (plugin.factionManager.factionLandService.getPlayerChunkState().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.HARD) ||
+//                plugin.factionManager.factionLandService.getPlayerChunkState().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.WEAK)) return;
 
-        if (plugin.factionManager.factionLandService.getPlayerChunkState().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.HARD) ||
-                plugin.factionManager.factionLandService.getPlayerChunkState().get(e.getPlayer().getUniqueId()).equals(PlayerChunkState.WEAK)) return;
+        if (playerCanInteractChunk(e.getPlayer().getUniqueId(), e.getBlock().getChunk())) return;
 
         //region Check Claim Chunk
         if (plugin.factionManager.factionHelperService.isChunkHardClaimed(chunkFaction.getHardClaimedChunks(), e.getBlock().getChunk())) {
@@ -57,7 +56,8 @@ public class ClaimedChunksChecker implements Listener {
         //endregion
 
         //region Raid End Check
-        for (RaidInfoObject raidInfoObject : plugin.raidManager.currentRaids.get(chunkFaction)){
+        if (!plugin.raidManager.getCurrentRaids().containsKey(chunkFaction)) return;
+        for (RaidInfoObject raidInfoObject : plugin.raidManager.getCurrentRaids().get(chunkFaction)){
             if (raidInfoObject.getRaidState() != RaidState.CAPTURE_FLAG) {
                 e.setCancelled(true);
                 return;
@@ -71,6 +71,10 @@ public class ClaimedChunksChecker implements Listener {
             }
         }
         //endregion
+    }
+
+    public boolean playerCanInteractChunk(UUID playerUUID, Chunk chunk){
+        return plugin.factionManager.factionLandService.getLinkedChunks().get(chunk).equals(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(playerUUID));
     }
 
     @EventHandler
@@ -97,7 +101,7 @@ public class ClaimedChunksChecker implements Listener {
         //endregion
 
         //region Raid Start Check
-        for (RaidInfoObject raidInfoObject : plugin.raidManager.currentRaids.get(chunkFaction)){
+        for (RaidInfoObject raidInfoObject : plugin.raidManager.getCurrentRaids().get(chunkFaction)){
             if (raidInfoObject.getRaidState() != RaidState.START) {
                 e.setCancelled(true);
                 return;

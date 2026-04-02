@@ -111,6 +111,14 @@ public class FactionLandService {
             plugin.factionManager.factionMapRenderService.DrawChunks(faction, chunkToClaim, weakClaim);
         }
 
+        // Update chunk state of all online players, since it now changed
+        for (Player onlinePlayer : chunkToClaim.getPlayersSeeingChunk()) {
+            if (onlinePlayer.getLocation().getChunk().equals(chunkToClaim)) {
+                plugin.factionManager.factionHelperService.updatePlayerChunkState(onlinePlayer.getUniqueId(), chunkToClaim);
+
+            }
+        }
+
         player.sendMessage(ChatColor.GREEN + "You have, claimed this chunk for your faction !");
     }
 

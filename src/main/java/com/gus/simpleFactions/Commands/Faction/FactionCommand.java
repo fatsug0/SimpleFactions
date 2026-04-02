@@ -4,6 +4,7 @@ import com.gus.simpleFactions.Commands.Builders.CommandHandler;
 import com.gus.simpleFactions.Commands.Builders.CommandInterface;
 import com.gus.simpleFactions.Commands.Faction.Sub.*;
 import com.gus.simpleFactions.Commands.Faction.Sub.Home.FactionSubHome;
+import com.gus.simpleFactions.Commands.Faction.Sub.Raid.FactionSubRaid;
 import com.gus.simpleFactions.Commands.Faction.Sub.Rank.FactionSubRank;
 import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
 import com.gus.simpleFactions.SimpleFactions;

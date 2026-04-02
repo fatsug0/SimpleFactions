@@ -166,7 +166,7 @@ public class FactionMembershipService {
             player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You don't have a home set for your faction !\n Set one with /f home set");
             return;
         }
-
+        System.out.println("TP ON THE WAY");
         // Use a Bukkit Runnable
         plugin.teleportManager.StartTeleport(playerUUID, 5, faction.getFactionHome());
     }
@@ -217,8 +217,10 @@ public class FactionMembershipService {
                 // Add player to the team
                 plugin.factionManager.factionHelperService.addPlayerToTabTeam(playerUUID, invite.invitingFaction.getFactionName());
 
+                // Add player to the faction rank
                 plugin.factionManager.factionRankService.AddPlayerToRank(invite.invitingFaction, plugin.factionManager.factionHelperService.checkPlayer(playerUUID), "MEMBER");
 
+                // Confirmation message
                 plugin.factionManager.factionHelperService.checkPlayer(playerUUID).sendMessage(ChatColor.GREEN + ChatColor.BOLD.toString() + "You have joined the faction " + invite.invitingFaction.getFactionName() + " !");
                 return;
             }

@@ -104,6 +104,7 @@ public class FactionRankService {
             return;
         }
 
+        System.out.println("Added perm to rank: " + rankName);
         rank.addPermission(permission);
 
         // Add perm for every player in the rank
@@ -140,7 +141,7 @@ public class FactionRankService {
         if (!player.hasPermission(perm)) {
             attachment.setPermission(perm, true);
         }
-        System.out.println("Perm added: " + perm);
+        perms.put(playerUUID, attachment);
     }
 
     public void RemovePermToPlayer(UUID playerUUID, String perm){
@@ -157,7 +158,7 @@ public class FactionRankService {
         if (player.hasPermission(perm)) {
             attachment.unsetPermission(perm);
         }
-        System.out.println("Perm removed: " + perm);
+        perms.put(playerUUID, attachment);
     }
 
     public FactionRankObject getRank(FactionObject faction, String rankName){
@@ -167,5 +168,11 @@ public class FactionRankService {
             }
         }
         return null;
+    }
+
+    public void removeAttachment(UUID playerUUID){
+        if (perms.containsKey(playerUUID)) {
+            perms.remove(playerUUID);
+        }
     }
 }

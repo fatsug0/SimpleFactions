@@ -54,8 +54,6 @@ public class FactionSubStorage implements CommandInterface {
             return;
         }
 
-        if (getPermission() != null && !player.hasPermission(getPermission())) return;
-
-        player.openInventory(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()).getFactionInv().getInventory());
+        player.openInventory(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()).getFactionInv());
     }
 }

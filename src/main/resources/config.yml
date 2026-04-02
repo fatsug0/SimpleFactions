@@ -18,8 +18,8 @@ faction:
 
   # Base options around the faction object (faction object being the faction class creating a faction)
   object:
-    base-faction-power: 10
-    base-faction-power-per-member: 10
+    base-faction-power: 2
+    base-faction-power-per-member: 1
     weak-claims-enabled: true
     weak-amount-coefficient: 1.5
 
