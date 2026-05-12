@@ -13,6 +13,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Team;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -44,7 +45,7 @@ public class FactionSubToggle implements CommandInterface {
 
     @Override
     public String getPermission() {
-        return "simplefactions.toggle";
+        return null;
     }
 
     @Override
@@ -59,6 +60,9 @@ public class FactionSubToggle implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
+        for (Team team : Bukkit.getScoreboardManager().getMainScoreboard().getTeams()) {
+            team.unregister();
+        }
 //        if (args.length != 4 || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())) {
 //            sender.sendMessage(sendUsageError());
 //            return;

@@ -28,7 +28,6 @@ public class FactionFormatterService {
     public String SendFactionInfo(FactionObject faction, UUID playerUUID) {
         Player player = plugin.factionManager.factionHelperService.checkPlayer(playerUUID);
         if (player == null) {
-            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
             return ChatColor.RED + "Something went wrong when trying to find the player with the UUID: " + playerUUID;
         }
 

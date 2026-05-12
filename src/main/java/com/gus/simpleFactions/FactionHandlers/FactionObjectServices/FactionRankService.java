@@ -9,10 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.scoreboard.Team;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 public class FactionRankService {
 
@@ -22,19 +19,49 @@ public class FactionRankService {
     }
 
     private HashMap<UUID, PermissionAttachment> perms = new HashMap<>();
+    public HashMap<UUID, PermissionAttachment> getPerms() {
+        return perms;
+    }
+    public Map<String, ArrayList<Map<String, Boolean>>> permWrapper() {
+        Map<String, ArrayList<Map<String, Boolean>>> returnMap = new HashMap<>();
+        for (Map.Entry<UUID, PermissionAttachment> entry : perms.entrySet()) {
+            if (!returnMap.containsKey(entry.getKey().toString())) {
+                returnMap.put(entry.getKey().toString(), new ArrayList<>(){{add(entry.getValue().getPermissions());}});
+            } else {
+                returnMap.get(entry.getKey().toString()).add(entry.getValue().getPermissions());
+            }
+        }
+        return returnMap;
+    }
+    public void unWrapPerms(Map<String, ArrayList<Map<String, Boolean>>> wrappedPerms) {
+        perms.clear();
+        if (wrappedPerms == null) return;
+        for (Map.Entry<String, ArrayList<Map<String, Boolean>>> entry : wrappedPerms.entrySet()) {
+            for (Map<String, Boolean> perm : entry.getValue()) {
+                try {
+                    for (Map.Entry<String, Boolean> permission : perm.entrySet()) {
+                        if (Boolean.TRUE.equals(permission.getValue())) {
+                            AddPermToPlayer(UUID.fromString(entry.getKey()), permission.getKey());
+                        }
+                    }
+                } catch (IllegalArgumentException e) {
+                    plugin.getLogger().warning("Skipped invalid saved permission UUID: " + entry.getKey());
+                }
+            }
+        }
+    }
 
     public void CreateFactionRank(FactionObject faction, String rankName, Player player){
         for (FactionRankObject rank : faction.getFactionRanks()){
             if (rank.getRankName().equals(rankName)){
                 if (player == null) {
-                    System.out.println("The rank you are trying to create already exists !");
                     return;
                 }
                 player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The rank you are trying to create already exists !");
                 return;
             }
         }
-        faction.addFactionRank(new FactionRankObject(rankName));
+        faction.addFactionRank(new FactionRankObject(rankName, null));
     }
 
     public void DeleteFactionRank(FactionObject faction, String rankName, Player player){
@@ -58,9 +85,9 @@ public class FactionRankService {
 
     // Add & Remove Player to Rank
     public void RemovePlayerFromRank(FactionObject faction, Player player, String rankName){
+        if (player == null) return;
         FactionRankObject rank = getRank(faction, rankName);
         if (rank == null) {
-            System.out.println(ChatColor.RED + ChatColor.BOLD.toString() + "The rank you are trying to add the player to does not exist !");
             return;
         }
 
@@ -76,16 +103,15 @@ public class FactionRankService {
         rank.removeRankMember(player.getUniqueId());
     }
     public void AddPlayerToRank(FactionObject faction, Player player, String rankName){
+        if (player == null) return;
         for (FactionRankObject rank : faction.getFactionRanks()){
             if (rank.getRankMembers().contains(player.getUniqueId())){
-                System.out.println(ChatColor.RED + ChatColor.BOLD.toString() + "Player is already in a rank, " + rank.getRankName());
                 return;
             }
         }
 
         FactionRankObject rank = getRank(faction, rankName);
         if (rank == null) {
-            System.out.println(ChatColor.RED + ChatColor.BOLD.toString() + "The rank you are trying to add the player to does not exist !");
             return;
         }
 
@@ -100,11 +126,9 @@ public class FactionRankService {
     public void AddPermissionRank(FactionObject faction, String rankName, String permission) {
         FactionRankObject rank = getRank(faction, rankName);
         if (rank == null) {
-            System.out.println(ChatColor.RED + ChatColor.BOLD.toString() + "The rank you are trying to add the player to does not exist !");
             return;
         }
 
-        System.out.println("Added perm to rank: " + rankName);
         rank.addPermission(permission);
 
         // Add perm for every player in the rank
@@ -115,7 +139,6 @@ public class FactionRankService {
     public void RemovePermissionRank(FactionObject faction, String rankName, String permission) {
         FactionRankObject rank = getRank(faction, rankName);
         if (rank == null) {
-            System.out.println(ChatColor.RED + ChatColor.BOLD.toString() + "The rank you are trying to add the player to does not exist !");
             return;
         }
 
@@ -129,6 +152,7 @@ public class FactionRankService {
 
     public void AddPermToPlayer(UUID playerUUID, String perm){
         Player player = plugin.factionManager.factionHelperService.checkPlayer(playerUUID);
+        if (player == null || perm == null) return;
         PermissionAttachment attachment;
 
         if (!perms.containsKey(playerUUID)) {
@@ -146,6 +170,7 @@ public class FactionRankService {
 
     public void RemovePermToPlayer(UUID playerUUID, String perm){
         Player player = plugin.factionManager.factionHelperService.checkPlayer(playerUUID);
+        if (player == null || perm == null) return;
         PermissionAttachment attachment;
 
         if (!perms.containsKey(playerUUID)) {

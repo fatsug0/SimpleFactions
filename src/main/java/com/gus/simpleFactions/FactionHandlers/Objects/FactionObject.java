@@ -1,23 +1,58 @@
 package com.gus.simpleFactions.FactionHandlers.Objects;
 
+import com.gus.simpleFactions.Json.FactionObjectWrapper;
 import de.bluecolored.bluemap.api.markers.MarkerSet;
 import org.bukkit.*;
 import org.bukkit.inventory.Inventory;
 
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class FactionObject {
 
-    public FactionObject(UUID player, String factionName, Integer factionStartPower) {
-        this.factionName = factionName;
-        this.factionOwner = player;
-        this.factionMembers.add(player);
-        this.power = factionStartPower;
+    public FactionObject(@Nullable UUID player, @Nullable String factionName, @Nullable Integer factionStartPower, @Nullable FactionObjectWrapper wrappedFactionObject) {
+        if (wrappedFactionObject == null) {
+            this.factionName = factionName;
+            this.factionOwner = player;
+            this.factionMembers.add(player);
+            this.power = factionStartPower;
 
-        this.factionMarkerSet = new MarkerSet("factionMarkerSet" + factionName);
+        } else {
+            this.factionOwner = UUID.fromString(wrappedFactionObject.getOwner());
+            this.factionName = wrappedFactionObject.getName();
+            if (wrappedFactionObject.getHome() != null) {
+                FactionObjectWrapper.SavedLocation home = wrappedFactionObject.getHome();
+                World world = Bukkit.getWorld(home.world == null ? "world" : home.world);
+                if (world != null) {
+                    this.factionHome = new Location(world, home.x, home.y, home.z, home.yaw, home.pitch);
+                }
+            }
+            wrappedFactionObject.getMembers().forEach(member -> {
+                try {
+                    this.factionMembers.add(UUID.fromString(member));
+                } catch (IllegalArgumentException ignored) {
+                }
+            });
+            World world = Bukkit.getWorld("world");
+            if (world != null) {
+                wrappedFactionObject.getHardClaimedChunks().forEach(chunk -> this.hardClaimedChunks.add(world.getChunkAt(chunk.getX(), chunk.getZ())));
+                wrappedFactionObject.getWeakClaimedChunks().forEach(chunk -> this.weakClaimedChunks.add(world.getChunkAt(chunk.getX(), chunk.getZ())));
+            }
+            wrappedFactionObject.getSavedFactionRanks().forEach((uuid, rank) -> {
+                try {
+                    this.savedFactionRanks.put(UUID.fromString(uuid), rank);
+                } catch (IllegalArgumentException ignored) {
+                }
+            });
+            wrappedFactionObject.getRanks().forEach(factionRankObjectWrapper -> this.factionRanks.add(new FactionRankObject(factionRankObjectWrapper.getRankName(), factionRankObjectWrapper)));
+            this.power = wrappedFactionObject.getPower();
+            this.teamPrefix = wrappedFactionObject.getTeamPrefix();
+            wrappedFactionObject.getInv().forEach((slot, item) -> this.factionInv.setItem(slot, item));
+        }
+
+        this.factionMarkerSet = new MarkerSet("factionMarkerSet" + this.factionName);
     }
-
 
     private final UUID factionOwner;
     public UUID getOwner() {
@@ -86,6 +121,7 @@ public class FactionObject {
     public void removeFactionRank(FactionRankObject rank) {
         this.factionRanks.remove(rank);
     }
+
 
     private HashMap<UUID, String> savedFactionRanks = new HashMap<>();
     public HashMap<UUID, String> getSavedFactionRanks() {

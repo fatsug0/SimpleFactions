@@ -48,6 +48,7 @@ public class FactionSubHome implements CommandInterface {
             return;
         }
 
+
         plugin.factionManager.factionMembershipService.TeleportHome(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), player.getUniqueId());
     }
 }

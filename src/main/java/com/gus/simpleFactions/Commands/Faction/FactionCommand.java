@@ -53,6 +53,7 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
             put("toggle", new FactionSubToggle(plugin));
             put("storage", new FactionSubStorage(plugin));
             put("admin", new  FactionSubAdmin(plugin));
+            put("save", new FactionSubSave(plugin));
         }};
     }
 
@@ -101,7 +102,6 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
                     }
                 }
 
-                System.out.println(invitePlayers.toString());
                 // Remove the sender from the list
                 invitePlayers.remove(player);
 

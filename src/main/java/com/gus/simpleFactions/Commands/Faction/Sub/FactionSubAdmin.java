@@ -52,7 +52,7 @@ public class FactionSubAdmin implements CommandInterface {
 
     @Override
     public HashMap<String, CommandInterface> getSubCommands() {
-        return null;
+        return new HashMap<>();
     }
 
     @Override
@@ -188,7 +188,6 @@ public class FactionSubAdmin implements CommandInterface {
             factionObject.getFactionMarkerSet().getMarkers().put("claimedLand " + factionObject.getFactionMarkerSet().getMarkers().size(), shapeMarker);
 
             // Redraw all the marker on the map
-            System.out.println(BlueMapAPI.getInstance().isPresent());
             BlueMapAPI.onEnable(api -> {
                 api.getWorld(Bukkit.getWorld("world")).ifPresent(world -> {
                     for (BlueMapMap map : world.getMaps()) {

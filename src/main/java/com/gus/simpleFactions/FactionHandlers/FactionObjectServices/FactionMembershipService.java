@@ -1,13 +1,12 @@
 package com.gus.simpleFactions.FactionHandlers.FactionObjectServices;
 
 import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
+import com.gus.simpleFactions.Json.FactionObjectWrapper;
 import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
 
@@ -18,55 +17,92 @@ public class FactionMembershipService {
         this.plugin = plugin;
     }
 
+
     private record FactionInvite(UUID invitedPlayer,  FactionObject invitingFaction){}
+    public record FactionInviteWrapper(UUID invitedPlayer,  String invitingFaction){}
 
 
     private ArrayList<FactionObject> existingFactions = new ArrayList<>();
     public ArrayList<FactionObject> getExistingFactions() {
-        return this.existingFactions;
+        return existingFactions;
     }
     public void addExistingFaction(FactionObject faction) {
-        this.existingFactions.add(faction);
+        existingFactions.add(faction);
     }
     public void removeExistingFaction(FactionObject faction) {
-        this.existingFactions.remove(faction);
+        existingFactions.remove(faction);
+    }
+    public ArrayList<FactionObjectWrapper> getWrappedExistingFaction() {
+        ArrayList<FactionObjectWrapper> returnArray = new ArrayList<>();
+        for (FactionObject faction : existingFactions) {
+            returnArray.add(new FactionObjectWrapper(faction));
+        }
+        return returnArray;
+    }
+    public void unWrapExistingFaction(ArrayList<FactionObjectWrapper> factionList) {
+        existingFactions.clear();
+        if (factionList == null) return;
+        for (FactionObjectWrapper factionObjectWrapper : factionList) {
+            if (factionObjectWrapper == null || factionObjectWrapper.getOwner() == null || factionObjectWrapper.getName() == null) continue;
+            try {
+                existingFactions.add(new FactionObject(null, null, null, factionObjectWrapper));
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Skipped invalid saved faction: " + factionObjectWrapper.getName());
+            }
+        }
     }
 
 
     private Map<UUID, FactionObject> playerFactionLink = new HashMap<>();
     public Map<UUID, FactionObject> getPlayerFactionLink() {
-        return this.playerFactionLink;
+        return playerFactionLink;
     }
     public void addPlayerFactionLink(UUID playerUUID, FactionObject faction) {
         this.playerFactionLink.put(playerUUID, faction);
     }
     public void removePlayerFactionLink(UUID playerUUID) {
-        this.playerFactionLink.remove(playerUUID);
+        playerFactionLink.remove(playerUUID);
+    }
+    public Map<String, String> getWrappedPlayerFactionLink() {
+        Map<String, String> returnMap = new HashMap<>();
+        for (Map.Entry<UUID, FactionObject> entry : playerFactionLink.entrySet()) {
+            returnMap.put(entry.getKey().toString(), entry.getValue().getFactionName());
+        }
+        return returnMap;
+    }
+    public void unWrapPlayerFactionLink(Map<String, String> playerFactionLink) {
+        this.playerFactionLink.clear();
+        if (playerFactionLink == null) return;
+        for (Map.Entry<String, String> entry : playerFactionLink.entrySet()) {
+            try {
+                Optional<FactionObject> faction = existingFactions.stream().filter(existingFaction -> existingFaction.getFactionName().equals(entry.getValue())).findFirst();
+                faction.ifPresent(factionObject -> addPlayerFactionLink(UUID.fromString(entry.getKey()), factionObject));
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Skipped invalid saved player faction link for UUID: " + entry.getKey());
+            }
+        }
     }
 
 
     private ArrayList<FactionInvite> pendingFactionInvites = new ArrayList<>();
     public ArrayList<FactionInvite> getPendingFactionInvites() {
-        return this.pendingFactionInvites;
+        return pendingFactionInvites;
     }
-    public void addPendingFactionInvite(FactionInvite invite) {
-        this.pendingFactionInvites.add(invite);
+    public ArrayList<FactionInviteWrapper> getWrappedPendingFactionInvites() {
+        ArrayList<FactionInviteWrapper> returnArray = new ArrayList<>();
+        for (FactionInvite invite : pendingFactionInvites) {
+            returnArray.add(new FactionInviteWrapper(invite.invitedPlayer, invite.invitingFaction.getFactionName()));
+        }
+        return returnArray;
     }
-    public void removePendingFactionInvite(FactionInvite invite) {
-        this.pendingFactionInvites.remove(invite);
+    public void unWrapPendingFactionInvites(ArrayList<FactionInviteWrapper> pendingFactionInvites) {
+        this.pendingFactionInvites.clear();
+        if (pendingFactionInvites == null) return;
+        for (FactionInviteWrapper invite : pendingFactionInvites) {
+            Optional<FactionObject> faction = existingFactions.stream().filter(existingFaction -> existingFaction.getFactionName().equals(invite.invitingFaction)).findFirst();
+            faction.ifPresent(factionObject -> this.pendingFactionInvites.add(new FactionInvite(invite.invitedPlayer, factionObject)));
+        }
     }
-
-    private HashMap<UUID, Inventory> currentFactionInv = new HashMap<>();
-    public HashMap<UUID, Inventory> getCurrentFactionInv() {
-        return this.currentFactionInv;
-    }
-    public void addCurrentFactionInv(UUID playerUUID, Inventory inv) {
-        this.currentFactionInv.put(playerUUID, inv);
-    }
-    public void removeCurrentFactionInv(UUID playerUUID) {
-        this.currentFactionInv.remove(playerUUID);
-    }
-
 
     public void KickPlayer(FactionObject faction, UUID playerUUID, boolean sendMsg) {
         Player player = plugin.factionManager.factionHelperService.checkPlayer(playerUUID);
@@ -166,7 +202,6 @@ public class FactionMembershipService {
             player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You don't have a home set for your faction !\n Set one with /f home set");
             return;
         }
-        System.out.println("TP ON THE WAY");
         // Use a Bukkit Runnable
         plugin.teleportManager.StartTeleport(playerUUID, 5, faction.getFactionHome());
     }

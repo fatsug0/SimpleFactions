@@ -21,7 +21,6 @@ public class TeleportManager {
     }
 
     private Map<UUID, BukkitTask> currentTeleports = new HashMap<>();
-    private final Map<UUID, BukkitTask> teleportEffects = new HashMap<>();
 
     public void StartTeleport(UUID player, int delay, Location toTeleport){
 

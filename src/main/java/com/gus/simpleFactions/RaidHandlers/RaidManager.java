@@ -12,21 +12,28 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 public class RaidManager {
 
     private final SimpleFactions plugin;
+
     public RaidManager(SimpleFactions plugin) {
         this.plugin = plugin;
     }
 
-    private HashMap<FactionObject, ArrayList<RaidInfoObject>> waitingRaids = new HashMap<>();
+    private final HashMap<FactionObject, ArrayList<RaidInfoObject>> waitingRaids = new HashMap<>();
+
     public HashMap<FactionObject, ArrayList<RaidInfoObject>> getWaitingRaids() {
         return waitingRaids;
     }
 
-    private HashMap<FactionObject, ArrayList<RaidInfoObject>> currentRaids = new HashMap<>();
+    private final HashMap<FactionObject, ArrayList<RaidInfoObject>> currentRaids = new HashMap<>();
+
     public HashMap<FactionObject, ArrayList<RaidInfoObject>> getCurrentRaids() {
         return currentRaids;
     }
@@ -35,11 +42,14 @@ public class RaidManager {
     private final int TIME_FOR_HOLD_GROUNDS_PHASE = 120 * 20;
     private final int TIME_DURING_HOLD_GROUNDS_PHASE = 60 * 20;
     private final int TIME_FOR_CTF_PHASE = 120 * 20;
+    private static final DateTimeFormatter RAID_DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-uuuu:HHmm");
 
     public BukkitTask task;
 
-    private HashMap<FactionObject, ArrayList<SelectedChunk>> currentFactionSelection = new HashMap<>();
-    private record SelectedChunk(FactionObject defendingFaction, Chunk chunk) {}
+    private final HashMap<FactionObject, ArrayList<SelectedChunk>> currentFactionSelection = new HashMap<>();
+
+    private record SelectedChunk(FactionObject defendingFaction, Chunk chunk) {
+    }
 
     public void addCurrentFactionSelection(FactionObject attackingFaction, FactionObject defendingFaction, Chunk chunk, Player sender) {
         if (currentFactionSelection.containsKey(attackingFaction)) {
@@ -61,23 +71,30 @@ public class RaidManager {
     }
 
     public void SendRaidDeclaration(Player sender, FactionObject attackingFaction, FactionObject defendingFaction, String raidDate) {
-        for (RaidInfoObject raidInfo : currentRaids.get(defendingFaction)) {
+        Calendar parsedRaidDate = dateToCalendar(raidDate);
+        if (parsedRaidDate == null) {
+            sender.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "Invalid raid date format. Use DD-MM-YYYY:TTTT");
+            return;
+        }
 
-            // Check if the defending faction doesn't already have a raid going on this date
-            if (dateToCalendar(raidDate) != null && raidInfo.getRaidDate().get(Calendar.DAY_OF_YEAR) == (dateToCalendar(raidDate).get(Calendar.DAY_OF_YEAR))) {
-                // RAID CANT HAPPEN
+        for (RaidInfoObject raidInfo : waitingRaids.getOrDefault(defendingFaction, new ArrayList<>())) {
+            if (raidInfo.getRaidDate().getTimeInMillis() == parsedRaidDate.getTimeInMillis()) {
+                sender.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "This faction is already being attacked at this date !\n Change it !");
+                return;
+            }
+        }
+        for (RaidInfoObject raidInfo : currentRaids.getOrDefault(defendingFaction, new ArrayList<>())) {
+            if (raidInfo.getRaidDate().getTimeInMillis() == parsedRaidDate.getTimeInMillis()) {
                 sender.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "This faction is already being attacked at this date !\n Change it !");
                 return;
             }
         }
 
-        // Check if any chunks are selected
         if (!currentFactionSelection.containsKey(attackingFaction) || currentFactionSelection.get(attackingFaction).isEmpty()) {
             sender.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You haven't selected any chunks");
             return;
         }
 
-        // Create attacked chunks arraylist
         ArrayList<Chunk> attackedChunks = new ArrayList<>();
         for (SelectedChunk selectedChunk : currentFactionSelection.get(attackingFaction)) {
             if (selectedChunk.defendingFaction.equals(defendingFaction)) {
@@ -85,78 +102,76 @@ public class RaidManager {
             }
         }
 
+        if (attackedChunks.isEmpty()) {
+            sender.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You haven't selected any chunks for this defending faction");
+            return;
+        }
 
-        addRaidToFaction(defendingFaction, new RaidInfoObject(RaidState.WAITING, dateToCalendar(raidDate), plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(sender.getUniqueId()), attackedChunks));
+        RaidInfoObject raidInfoObject = new RaidInfoObject(
+                RaidState.WAITING,
+                parsedRaidDate,
+                plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(sender.getUniqueId()),
+                attackedChunks
+        );
+        addRaidToMap(waitingRaids, defendingFaction, raidInfoObject);
     }
 
-    public void StartRaidPrepPhase(RaidInfoObject raidInfo, FactionObject defendingFaction){
+    public void StartRaidPrepPhase(RaidInfoObject raidInfo, FactionObject defendingFaction) {
         if (raidInfo.getRaidState() != RaidState.START) return;
         UiPhaseChange(raidInfo, defendingFaction, "Preparation phase has started!", "Prepare to fight!", "Preparation phase has started!", "Prepare to fight!");
 
         new BukkitRunnable() {
-
-            // Run Once
-            // Time for each faction to prepare before the raid
-            int timer = TIME_FOR_PREP_PHASE; // 20 ticks per seconds
+            int timer = TIME_FOR_PREP_PHASE;
             boolean corePlaced = false;
             boolean coreGiven = false;
 
             @Override
             public void run() {
-
-                //region create & give core
-                while (!coreGiven) {
-
-                    // Get an array of all the player defending the faction
-                    ArrayList<UUID> defendingFactionMembers = new ArrayList<>(defendingFaction.getFactionMembers());
-                    for (UUID uuid : defendingFactionMembers) {
-                        if (checkPlayer(uuid) != null && Bukkit.getPlayer(uuid).isOnline() && raidInfo.getAttackedChunks().contains(checkPlayer(uuid).getLocation().getChunk())){
-                            defendingFactionMembers.add(uuid);
+                if (!coreGiven) {
+                    ArrayList<UUID> eligibleDefenders = new ArrayList<>();
+                    for (UUID uuid : defendingFaction.getFactionMembers()) {
+                        Player player = Bukkit.getPlayer(uuid);
+                        if (player != null && player.isOnline() && raidInfo.getAttackedChunks().contains(player.getLocation().getChunk())) {
+                            eligibleDefenders.add(uuid);
                         }
                     }
 
-                    // Get the random player and giving him the core
-                    if (!defendingFactionMembers.isEmpty()) {
-
-                        // Get a random player
+                    if (!eligibleDefenders.isEmpty()) {
                         Random random = new Random();
-                        UUID randomPlayer = defendingFactionMembers.get(random.nextInt(defendingFactionMembers.size()));
+                        UUID randomPlayer = eligibleDefenders.get(random.nextInt(eligibleDefenders.size()));
+                        Player player = Bukkit.getPlayer(randomPlayer);
+                        if (player != null) {
+                            ItemStack core = new ItemStack(Material.NETHERITE_BLOCK);
+                            ItemMeta coreMeta = core.getItemMeta();
+                            if (coreMeta != null) {
+                                coreMeta.setDisplayName(ChatColor.BLACK + ChatColor.BOLD.toString() + "RAID CORE");
+                                core.setItemMeta(coreMeta);
+                            }
 
-                        // Create the ItemStack
-                        ItemStack core = new ItemStack(Material.NETHERITE_BLOCK);
-                        ItemMeta coreMeta = core.getItemMeta();
-                        coreMeta.setDisplayName(ChatColor.BLACK + ChatColor.BOLD.toString() + "RAID CORE");
-                        core.setItemMeta(coreMeta);
+                            var fullInventory = player.getInventory().addItem(core);
+                            if (!fullInventory.isEmpty()) {
+                                player.getWorld().dropItem(player.getLocation(), core);
+                            }
 
-                        // Add to player inventory or drop it on the ground (inventory full)
-                        if (checkPlayer(randomPlayer) == null) break;
-                        var fullInventory = Bukkit.getPlayer(randomPlayer).getInventory().addItem(core);
-                        if (!fullInventory.isEmpty()) Bukkit.getPlayer(randomPlayer).getWorld().dropItem(Bukkit.getPlayer(randomPlayer).getLocation(), core);
-
-                        raidInfo.setRaidCore(core);
-                        coreGiven = true;
+                            raidInfo.setRaidCore(core);
+                            coreGiven = true;
+                        }
                     }
                 }
-                //endregion
 
-                //region place core randomly or and start the "hold grounds" phase
                 if (timer <= 0) {
-
-                    // Check first if the core has been placed, if not, place it randomly
                     if (!corePlaced) {
                         Random random = new Random();
                         Chunk randomChunk = raidInfo.getAttackedChunks().get(random.nextInt(raidInfo.getAttackedChunks().size()));
 
-                        int xCord = random.nextInt(16, 16);
-                        int zCord = random.nextInt(16, 16);
-                        int yCord = randomChunk.getChunkSnapshot().getHighestBlockYAt(xCord, zCord) - 5;
+                        int xCord = random.nextInt(16);
+                        int zCord = random.nextInt(16);
+                        int yCord = Math.max(1, randomChunk.getChunkSnapshot().getHighestBlockYAt(xCord, zCord) - 5);
 
-                        // Place the core
                         Block coreBlock = randomChunk.getBlock(xCord, yCord, zCord);
                         coreBlock.setType(Material.NETHERITE_BLOCK);
                         coreBlock.setMetadata("CoreRaidBlock", new FixedMetadataValue(plugin, defendingFaction.getFactionName()));
 
-                        // Clear the surrounding blocks
                         for (int i = -1; i <= 1; i++) {
                             for (int j = -1; j <= 1; j++) {
                                 randomChunk.getBlock(xCord + i, yCord + j, zCord).setType(Material.AIR);
@@ -164,24 +179,16 @@ public class RaidManager {
                         }
 
                         raidInfo.setRaidCore(new ItemStack(coreBlock.getType(), 1, coreBlock.getData()));
-                        corePlaced = true;
                     }
 
-                    // Time has run out, start the raid
+                    raidInfo.setRaidState(RaidState.GROUNDS);
                     StartHoldGroundsPhase(raidInfo, defendingFaction);
                     cancel();
                     return;
                 }
-                //endregion
 
-                // The core has been placed by a player, the raid will start when the time has run out
-                if (raidInfo.getRaidState() == RaidState.GROUNDS) corePlaced = true;
-
-                // The time has run out, and the core has been placed, start the raid
-                if (timer <= 0 && corePlaced) {
-                    StartHoldGroundsPhase(raidInfo, defendingFaction);
-                    cancel();
-                    return;
+                if (raidInfo.getRaidState() == RaidState.GROUNDS) {
+                    corePlaced = true;
                 }
 
                 timer -= 20;
@@ -189,33 +196,34 @@ public class RaidManager {
         }.runTaskTimer(plugin, 0, 20);
     }
 
-    public void StartHoldGroundsPhase(RaidInfoObject raidInfo, FactionObject defendingFaction){
+    public void StartHoldGroundsPhase(RaidInfoObject raidInfo, FactionObject defendingFaction) {
         if (raidInfo.getRaidState() != RaidState.GROUNDS) return;
         UiPhaseChange(raidInfo, defendingFaction, "The hold grounds phase has start!", "hold the convoyed land for " + TIME_DURING_HOLD_GROUNDS_PHASE / 20 + " seconds !", "The hold grounds phase has start!", "defend the convoyed land " + TIME_DURING_HOLD_GROUNDS_PHASE / 20 + " seconds");
 
         new BukkitRunnable() {
-
             int timer = TIME_FOR_HOLD_GROUNDS_PHASE;
             int holdGroundsTimer = TIME_DURING_HOLD_GROUNDS_PHASE;
 
             @Override
             public void run() {
-                // The condition to pass to the next phase is that the number of attacking players has to be greater than
-                // the number of defending players for TIME_DURING_HOLD_GROUNDS_PHASE seconds
-
-                if (countFactionPlayer(raidInfo.getAttackedChunks(), raidInfo.getAttackingFaction()) > countFactionPlayer(raidInfo.getAttackedChunks(), defendingFaction)){
+                if (countFactionPlayer(raidInfo.getAttackedChunks(), raidInfo.getAttackingFaction()) > countFactionPlayer(raidInfo.getAttackedChunks(), defendingFaction)) {
                     holdGroundsTimer -= 20;
                     if (holdGroundsTimer <= 0) {
+                        raidInfo.setRaidState(RaidState.CAPTURE_FLAG);
                         StartCaptureTheFlagPhase(raidInfo, defendingFaction);
                         cancel();
+                        return;
                     }
-                } else{
+                } else {
                     holdGroundsTimer = TIME_DURING_HOLD_GROUNDS_PHASE;
                 }
 
                 if (timer <= 0) {
-                    // Cancel raid, time has run out DEFEND WIN
                     UiPhaseChange(raidInfo, defendingFaction, "Time has run out!", "You lost!", "Time has run out!", "You won!");
+                    raidInfo.setRaidState(RaidState.END);
+                    removeRaidFromMap(currentRaids, defendingFaction, raidInfo);
+                    cancel();
+                    return;
                 }
 
                 timer -= 20;
@@ -223,25 +231,21 @@ public class RaidManager {
         }.runTaskTimer(plugin, 0, 20);
     }
 
-    public void StartCaptureTheFlagPhase(RaidInfoObject raidInfo, FactionObject defendingFaction){
+    public void StartCaptureTheFlagPhase(RaidInfoObject raidInfo, FactionObject defendingFaction) {
         if (raidInfo.getRaidState() != RaidState.CAPTURE_FLAG) return;
         UiPhaseChange(raidInfo, defendingFaction, "The capture the flag phase has started !", "Find and destroy the core !", "The capture the flag phase has started !", "Defend the core !");
 
         new BukkitRunnable() {
-
             int timer = TIME_FOR_CTF_PHASE;
 
             @Override
             public void run() {
-                // The condition to pass to the next phase and win the raid is that the attacking faction finds and destroys
-                // the defending raid core within the time of the raid (TIME_FOR_CTF_PHASE)
-
-                // Here the win condition is checked by an event listener (onBlockBreak)
-                // So this BukkitRunnable is only used to cancel the raid if the win condition is not met (time has run out)
-
                 if (timer <= 0) {
-                    // Cancel raid, time has run out DEFEND WIN
                     UiPhaseChange(raidInfo, defendingFaction, "Time has run out!", "You lost!", "Time has run out!", "You won!");
+                    raidInfo.setRaidState(RaidState.END);
+                    removeRaidFromMap(currentRaids, defendingFaction, raidInfo);
+                    cancel();
+                    return;
                 }
 
                 timer -= 20;
@@ -249,70 +253,70 @@ public class RaidManager {
         }.runTaskTimer(plugin, 0, 20);
     }
 
-    public void EndRaid(RaidInfoObject raidInfo, FactionObject defendingFaction){
+    public void EndRaid(RaidInfoObject raidInfo, FactionObject defendingFaction) {
         if (raidInfo.getRaidState() != RaidState.END) return;
         UiPhaseChange(raidInfo, defendingFaction, "Raid ended!", "You won!", "Raid ended!", "You lost!");
-
-        // If the raid gets to this phase, the ATTACK faction has won
+        removeRaidFromMap(currentRaids, defendingFaction, raidInfo);
     }
 
-    public void StartCheckForWaitingRaids(){
+    public void StartCheckForWaitingRaids() {
         task = new BukkitRunnable() {
-
             @Override
             public void run() {
-                for (FactionObject faction : waitingRaids.keySet()) {
-                    for (RaidInfoObject raidInfo : waitingRaids.get(faction)) {
-                        if (raidInfo.getRaidState() == RaidState.WAITING) {
-                            if (checkWaitingRaids(Calendar.getInstance(), raidInfo.getRaidDate())) {
-                                raidInfo.setRaidState(RaidState.START);
-                                removeRaidToFaction(faction, raidInfo);
-                                addRaidToFaction(faction, raidInfo);
-                                StartRaidPrepPhase(raidInfo, faction);
-                            }
+                ArrayList<Map.Entry<FactionObject, RaidInfoObject>> raidsToStart = new ArrayList<>();
+
+                for (Map.Entry<FactionObject, ArrayList<RaidInfoObject>> entry : waitingRaids.entrySet()) {
+                    FactionObject faction = entry.getKey();
+                    for (RaidInfoObject raidInfo : entry.getValue()) {
+                        if (raidInfo.getRaidState() == RaidState.WAITING && checkWaitingRaids(Calendar.getInstance(), raidInfo.getRaidDate())) {
+                            raidsToStart.add(new AbstractMap.SimpleEntry<>(faction, raidInfo));
                         }
                     }
                 }
+
+                for (Map.Entry<FactionObject, RaidInfoObject> raidToStart : raidsToStart) {
+                    FactionObject faction = raidToStart.getKey();
+                    RaidInfoObject raidInfo = raidToStart.getValue();
+                    raidInfo.setRaidState(RaidState.START);
+                    removeRaidFromMap(waitingRaids, faction, raidInfo);
+                    addRaidToMap(currentRaids, faction, raidInfo);
+                    StartRaidPrepPhase(raidInfo, faction);
+                }
             }
-        }.runTaskTimer(plugin, 0, 1200); // Check every minute (20 ticks * 60 seconds)
-
+        }.runTaskTimer(plugin, 0, 1200);
     }
 
-    // Helper method
-    private void addRaidToFaction(FactionObject faction, RaidInfoObject raidInfo){
-        var raids = currentRaids.get(faction);
+    private void addRaidToMap(Map<FactionObject, ArrayList<RaidInfoObject>> map, FactionObject faction, RaidInfoObject raidInfo) {
+        ArrayList<RaidInfoObject> raids = map.computeIfAbsent(faction, ignored -> new ArrayList<>());
         raids.add(raidInfo);
-        waitingRaids.put(faction, raids);
     }
 
-    private void removeRaidToFaction(FactionObject faction, RaidInfoObject raidInfo){
-        var raids = currentRaids.get(faction);
-        if (!currentRaids.containsKey(faction) || raids.contains(raidInfo)) return;
+    private void removeRaidFromMap(Map<FactionObject, ArrayList<RaidInfoObject>> map, FactionObject faction, RaidInfoObject raidInfo) {
+        ArrayList<RaidInfoObject> raids = map.get(faction);
+        if (raids == null) return;
         raids.remove(raidInfo);
-        waitingRaids.put(faction, raids);
+        if (raids.isEmpty()) {
+            map.remove(faction);
+        }
     }
 
     private Calendar dateToCalendar(String date) {
-        // Date is formated: DD-MM-YYYY:TTTT (UTC + 0)
-        if (date.length() != 15) return null;
+        if (date == null || date.length() != 15) return null;
 
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.YEAR, Integer.parseInt(date.substring(6, 9)));
-        cal.set(Calendar.MONTH, Integer.parseInt(date.substring(3, 5)) - 1);
-        cal.set(Calendar.DAY_OF_YEAR, Integer.parseInt(date.substring(0, 2)));
-        cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(date.substring(10, 12)));
-        cal.set(Calendar.MINUTE, Integer.parseInt(date.substring(13, 15)));
-
-        return cal;
+        try {
+            LocalDateTime parsed = LocalDateTime.parse(date, RAID_DATE_FORMAT);
+            GregorianCalendar calendar = GregorianCalendar.from(parsed.atZone(ZoneOffset.UTC));
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+            return calendar;
+        } catch (DateTimeParseException ignored) {
+            return null;
+        }
     }
 
-    private boolean checkWaitingRaids(Calendar nowDate, Calendar raidDate){
-        return (
-                (raidDate.get(Calendar.YEAR) - nowDate.get(Calendar.YEAR)) <= 1 &&
-                (raidDate.get(Calendar.DAY_OF_YEAR) - raidDate.get(Calendar.DAY_OF_YEAR)) <= 1 &&
-                (raidDate.get(Calendar.HOUR_OF_DAY) - nowDate.get(Calendar.HOUR_OF_DAY)) <= 1 &&
-                (raidDate.get(Calendar.MINUTE) - nowDate.get(Calendar.MINUTE)) <= 0
-        );
+    private boolean checkWaitingRaids(Calendar nowDate, Calendar raidDate) {
+        if (nowDate == null || raidDate == null) return false;
+        return !nowDate.before(raidDate);
     }
 
     private Player checkPlayer(UUID playerUUID) {
@@ -326,35 +330,36 @@ public class RaidManager {
         }
         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerUUID);
         if (offlinePlayer.hasPlayedBefore()) {
-            return offlinePlayer.getPlayer();  // This might still be null if not loaded
+            return offlinePlayer.getPlayer();
         } else {
             plugin.getLogger().warning("Player with UUID " + playerUUID + " has never played on this server.");
             return null;
         }
     }
 
-    private int countFactionPlayer(ArrayList<Chunk> chunks, FactionObject faction){
+    private int countFactionPlayer(ArrayList<Chunk> chunks, FactionObject faction) {
         int count = 0;
-        for (UUID playerUUID : faction.getFactionMembers()){
-            if (checkPlayer(playerUUID) != null && Bukkit.getPlayer(playerUUID).isOnline() && chunks.contains(Bukkit.getPlayer(playerUUID).getLocation().getChunk())) {
+        for (UUID playerUUID : faction.getFactionMembers()) {
+            Player player = checkPlayer(playerUUID);
+            if (player != null && player.isOnline() && chunks.contains(player.getLocation().getChunk())) {
                 count++;
             }
         }
         return count;
     }
 
-    private void UiPhaseChange(RaidInfoObject raidInfoObject, FactionObject defendingFaction, String attackingTitle, String attackingSubTitle, String defendingTitle, String defendingSubTitle){
-        // Attacking faction
-        for (UUID uuid : raidInfoObject.getAttackingFaction().getFactionMembers()){
-            if (checkPlayer(uuid) != null && Bukkit.getPlayer(uuid).isOnline() && raidInfoObject.getAttackedChunks().contains(checkPlayer(uuid).getLocation().getChunk())){
-                Bukkit.getPlayer(uuid).sendTitle(ChatColor.RED + attackingTitle, ChatColor.RED + attackingSubTitle);
+    private void UiPhaseChange(RaidInfoObject raidInfoObject, FactionObject defendingFaction, String attackingTitle, String attackingSubTitle, String defendingTitle, String defendingSubTitle) {
+        for (UUID uuid : raidInfoObject.getAttackingFaction().getFactionMembers()) {
+            Player player = checkPlayer(uuid);
+            if (player != null && player.isOnline() && raidInfoObject.getAttackedChunks().contains(player.getLocation().getChunk())) {
+                player.sendTitle(ChatColor.RED + attackingTitle, ChatColor.RED + attackingSubTitle);
             }
         }
 
-        // Defending faction
-        for (UUID uuid : defendingFaction.getFactionMembers()){
-            if (checkPlayer(uuid) != null && Bukkit.getPlayer(uuid).isOnline() && raidInfoObject.getAttackedChunks().contains(checkPlayer(uuid).getLocation().getChunk())){
-                Bukkit.getPlayer(uuid).sendTitle(ChatColor.RED + defendingTitle, ChatColor.RED + defendingSubTitle);
+        for (UUID uuid : defendingFaction.getFactionMembers()) {
+            Player player = checkPlayer(uuid);
+            if (player != null && player.isOnline() && raidInfoObject.getAttackedChunks().contains(player.getLocation().getChunk())) {
+                player.sendTitle(ChatColor.RED + defendingTitle, ChatColor.RED + defendingSubTitle);
             }
         }
     }

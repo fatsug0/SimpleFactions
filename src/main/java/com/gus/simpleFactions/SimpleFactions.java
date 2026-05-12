@@ -1,61 +1,70 @@
 package com.gus.simpleFactions;
 
+import com.flowpowered.math.vector.Vector2d;
 import com.gus.simpleFactions.Commands.Faction.FactionCommand;
 import com.gus.simpleFactions.EventListeners.ClaimedChunksChecker;
 import com.gus.simpleFactions.FactionHandlers.FactionManager;
 import com.gus.simpleFactions.EventListeners.MainEventListener;
-import com.gus.simpleFactions.Miscellaneous.PermissionManager;
+import com.gus.simpleFactions.Json.JsonHandler;
 import com.gus.simpleFactions.Miscellaneous.TeleportManager;
 import com.gus.simpleFactions.RaidHandlers.RaidManager;
 import org.bukkit.Bukkit;
+import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.UUID;
 
 public final class SimpleFactions extends JavaPlugin {
 
     public FactionManager factionManager;
     public TeleportManager teleportManager;
-    public PermissionManager permissionManager;
     public RaidManager raidManager;
+    public JsonHandler jsonHandler;
 
     @Override
     public void onEnable() {
+
+        // Load config file
         getConfig().options().copyDefaults();
         saveDefaultConfig();
 
+        // Initiate managers
         factionManager = new FactionManager(this);
         teleportManager = new TeleportManager(this);
-        permissionManager = new PermissionManager(this);
         raidManager = new RaidManager(this);
+        jsonHandler = new JsonHandler(this);
 
+        // Load all json data
+        jsonHandler.LoadSequence();
+
+        // initiate event listeners
         Bukkit.getPluginManager().registerEvents(new MainEventListener(this), this);
         Bukkit.getPluginManager().registerEvents(new ClaimedChunksChecker(this), this);
 
-        System.out.println(getConfig().getBoolean("enable-bluemap-addon") ? "[+] BlueMap addon enabled !" : "[-] BlueMap addon disabled !");
-
+        // Initiate commands
         InitiateCommands();
 
-        StartUpBanner();
-
-        // For debug purposes, erase all teams on startup
-        for (Team team : Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeams()) {
-            team.unregister();
-        }
-
+        // Start raid checking
         raidManager.StartCheckForWaitingRaids();
 
+        // Others
+        Misc();
+
+//        for (Team team : Bukkit.getScoreboardManager().getMainScoreboard().getTeams()) {
+//            team.unregister();
+//        }
     }
 
     @Override
     public void onDisable() {
 
-        // For debug purposes, erase all teams on shutdown
-        for (Team team : Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeams()) {
-            team.unregister();
-        }
+        // Save all json data
+        jsonHandler.SaveSequence();
 
+        // Stop all current raids
         raidManager.task.cancel();
     }
 
@@ -81,4 +90,10 @@ public final class SimpleFactions extends JavaPlugin {
                 "             Developed by fatsug0 \n" +
                 "\n");
     }
+
+    private void Misc(){
+        StartUpBanner();
+        System.out.println(getConfig().getBoolean("enable-bluemap-addon") ? "[+] BlueMap addon enabled !" : "[-] BlueMap addon disabled !");
+    }
+
 }

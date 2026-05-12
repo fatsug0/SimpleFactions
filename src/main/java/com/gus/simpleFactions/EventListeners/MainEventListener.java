@@ -42,10 +42,11 @@ public class MainEventListener implements Listener {
 
         // Give back players permissions from their faction rank
         if (plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(e.getPlayer().getUniqueId())) {
-            System.out.println("PLAYER HAS A FACTION");
             FactionObject faction = plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(e.getPlayer().getUniqueId());
-            for (String perm : plugin.factionManager.factionRankService.getRank(faction, faction.getSavedFactionRanks().get(e.getPlayer().getUniqueId())).getPermissions()) {
-                System.out.println("GIVING PERM TO PLAYER : " + perm);
+            String savedRank = faction.getSavedFactionRanks().get(e.getPlayer().getUniqueId());
+            FactionRankObject rank = savedRank == null ? null : plugin.factionManager.factionRankService.getRank(faction, savedRank);
+            if (rank == null) return;
+            for (String perm : rank.getPermissions()) {
                 plugin.factionManager.factionRankService.AddPermToPlayer(e.getPlayer().getUniqueId(), perm);
             }
         }

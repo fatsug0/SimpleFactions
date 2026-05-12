@@ -9,6 +9,8 @@ import org.bukkit.Chunk;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FactionLandService {
 
@@ -21,31 +23,87 @@ public class FactionLandService {
 
     private Map<Chunk, FactionObject> linkedChunks = new HashMap<>();
     public Map<Chunk, FactionObject> getLinkedChunks() {
-        return this.linkedChunks;
+        return linkedChunks;
     }
     public void addLinkedChunk(Chunk chunk, FactionObject faction) {
-        this.linkedChunks.put(chunk, faction);
+        linkedChunks.put(chunk, faction);
     }
     public void removeLinkedChunk(Chunk chunk) {
-        this.linkedChunks.remove(chunk);
+        linkedChunks.remove(chunk);
+    }
+    public Map<String, String> getWrappedLinkedChunks() {
+            Map<String, String> returnMap = new HashMap<>();
+            for (Map.Entry<Chunk, FactionObject> entry : linkedChunks.entrySet()) {
+                returnMap.put(chunkKey(entry.getKey().getX(), entry.getKey().getZ()), entry.getValue().getFactionName());
+            }
+            return returnMap;
+    }
+    public void unWrapLinkedChunks(Map<String, String> wrappedLinkedChunks) {
+        linkedChunks.clear();
+        if (wrappedLinkedChunks == null) return;
+        for (Map.Entry<String, String> entry : wrappedLinkedChunks.entrySet()) {
+            Chunk chunk = chunkFromKey(entry.getKey());
+            if (chunk == null) continue;
+            Optional<FactionObject> faction = plugin.factionManager.factionMembershipService.getExistingFactions().stream().filter(existingFaction -> existingFaction.getFactionName().equals(entry.getValue())).findFirst();
+            faction.ifPresent(factionObject -> addLinkedChunk(chunk, factionObject));
+        }
+    }
+
+    private String chunkKey(int x, int z) {
+        return x + "," + z;
+    }
+
+    private Chunk chunkFromKey(String key) {
+        ArrayList<Double> numbers = new ArrayList<>();
+        Matcher matcher = Pattern.compile("-?\\d+(?:\\.\\d+)?").matcher(key);
+        while (matcher.find()) {
+            numbers.add(Double.parseDouble(matcher.group()));
+        }
+        if (numbers.size() < 2) return null;
+        if (Bukkit.getWorld("world") == null) return null;
+        return Bukkit.getWorld("world").getChunkAt(numbers.get(0).intValue(), numbers.get(1).intValue());
     }
 
 
     private Map<UUID, PlayerChunkState> playerChunkState = new HashMap<>();
     public Map<UUID, PlayerChunkState> getPlayerChunkState() {
-        return this.playerChunkState;
+        return playerChunkState;
     }
     public void addPlayerInProtectedChunks(UUID playerUUID, PlayerChunkState state) {
         this.playerChunkState.put(playerUUID, state);
     }
     public void removePlayerInProtectedChunks(UUID playerUUID) {
-        this.playerChunkState.remove(playerUUID);
+        playerChunkState.remove(playerUUID);
     }
-
+    public void unWrapPlayerChunkState(Map<UUID, PlayerChunkState> wrappedPlayerChunkState) {
+        playerChunkState.clear();
+        if (wrappedPlayerChunkState == null) return;
+        for (Map.Entry<UUID, PlayerChunkState> entry : wrappedPlayerChunkState.entrySet()) {
+            addPlayerInProtectedChunks(entry.getKey(), entry.getValue());
+        }
+    }
+    public Map<String, PlayerChunkState> getWrappedPlayerChunkState() {
+        Map<String, PlayerChunkState> returnMap = new HashMap<>();
+        for (Map.Entry<UUID, PlayerChunkState> entry : playerChunkState.entrySet()) {
+            returnMap.put(entry.getKey().toString(), entry.getValue());
+        }
+        return returnMap;
+    }
+    public void unWrapPlayerChunkStateStrings(Map<String, PlayerChunkState> wrappedPlayerChunkState) {
+        playerChunkState.clear();
+        if (wrappedPlayerChunkState == null) return;
+        for (Map.Entry<String, PlayerChunkState> entry : wrappedPlayerChunkState.entrySet()) {
+            try {
+                addPlayerInProtectedChunks(UUID.fromString(entry.getKey()), entry.getValue());
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Skipped invalid saved player chunk state UUID: " + entry.getKey());
+            }
+        }
+    }
 
     private final int MAX_WEAK_CHUNKS;
     public int getMAX_WEAK_CHUNKS(FactionObject faction) {
-        return this.MAX_WEAK_CHUNKS * faction.getPower();
+        return MAX_WEAK_CHUNKS * faction.getPower();
     }
 
 

@@ -1,12 +1,26 @@
 package com.gus.simpleFactions.FactionHandlers.Objects;
 
+import com.gus.simpleFactions.Json.FactionRankObjectWrapper;
+
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.UUID;
 
 public class FactionRankObject {
 
-    public FactionRankObject(String rankName) {
-        this.rankName = rankName;
+    public FactionRankObject(@Nullable String rankName, @Nullable FactionRankObjectWrapper wrappedFactionRankObject) {
+        if (wrappedFactionRankObject == null) {
+            this.rankName = rankName;
+        } else {
+            this.rankName = wrappedFactionRankObject.getRankName();
+            wrappedFactionRankObject.getRankMembers().forEach(playerUUID -> {
+                try {
+                    this.rankMembers.add(UUID.fromString(playerUUID));
+                } catch (IllegalArgumentException ignored) {
+                }
+            });
+            this.permissions.addAll(wrappedFactionRankObject.getPermissions());
+        }
     }
 
     private final String rankName;

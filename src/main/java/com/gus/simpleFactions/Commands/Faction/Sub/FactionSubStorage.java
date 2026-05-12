@@ -44,7 +44,7 @@ public class FactionSubStorage implements CommandInterface {
 
     @Override
     public HashMap<String, CommandInterface> getSubCommands() {
-        return null;
+        return new HashMap<>();
     }
 
     @Override

@@ -41,7 +41,7 @@ public class FactionManager {
             return;
         }
 
-        FactionObject newFaction = new FactionObject(playerUUID, factionName, plugin.getConfig().getInt("faction.object.base-faction-power"));
+        FactionObject newFaction = new FactionObject(playerUUID, factionName, plugin.getConfig().getInt("faction.object.base-faction-power"), null);
         factionMembershipService.addExistingFaction(newFaction);
         factionMembershipService.addPlayerFactionLink(playerUUID, newFaction);
         factionHelperService.createTabTeam(playerUUID, factionName, null, new ArrayList<>(List.of(String.format("#%06X", (int) (Math.random() * 0xFFFFFF)))));
@@ -74,7 +74,8 @@ public class FactionManager {
         }
 
         plugin.factionManager.factionRankService.CreateFactionRank(newFaction, "MEMBER", null);
-        plugin.factionManager.factionRankService.AddPermissionRank(newFaction, "MEMBER", "simplefaction.invite");
+        plugin.factionManager.factionRankService.AddPermissionRank(newFaction, "MEMBER", "simplefactions.invite");
         plugin.factionManager.factionRankService.AddPermissionRank(newFaction, "MEMBER", "simplefactions.home");
+
     }
 }

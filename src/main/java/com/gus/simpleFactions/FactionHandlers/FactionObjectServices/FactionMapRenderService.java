@@ -18,6 +18,8 @@ import org.bukkit.World;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FactionMapRenderService {
 
@@ -32,10 +34,41 @@ public class FactionMapRenderService {
         return bluemapClaimedChunk;
     }
     public void addBlueMapChunk(Chunk chunk, int id) {
-        this.bluemapClaimedChunk.put(chunk, id);
+        bluemapClaimedChunk.put(chunk, id);
     }
     public void removeBlueMapChunk(Chunk chunk) {
-        this.bluemapClaimedChunk.remove(chunk);
+        bluemapClaimedChunk.remove(chunk);
+    }
+    public Map<String, Integer> getWrappedBluemapClaimedChunk() {
+        Map<String, Integer> returnMap = new HashMap<>();
+        for (Map.Entry<Chunk, Integer> entry : bluemapClaimedChunk.entrySet()) {
+            returnMap.put(chunkKey(entry.getKey().getX(), entry.getKey().getZ()), entry.getValue());
+        }
+        return returnMap;
+    }
+    public void unWrapBluemapClaimedChunk(Map<String, ? extends Number> wrappedBluemapClaimedChunk) {
+        bluemapClaimedChunk.clear();
+        if (wrappedBluemapClaimedChunk == null) return;
+        for (Map.Entry<String, ? extends Number> entry : wrappedBluemapClaimedChunk.entrySet()) {
+            Chunk chunk = chunkFromKey(entry.getKey());
+            if (chunk == null) continue;
+            addBlueMapChunk(chunk, entry.getValue().intValue());
+        }
+    }
+
+    private String chunkKey(int x, int z) {
+        return x + "," + z;
+    }
+
+    private Chunk chunkFromKey(String key) {
+        ArrayList<Double> numbers = new ArrayList<>();
+        Matcher matcher = Pattern.compile("-?\\d+(?:\\.\\d+)?").matcher(key);
+        while (matcher.find()) {
+            numbers.add(Double.parseDouble(matcher.group()));
+        }
+        if (numbers.size() < 2) return null;
+        if (Bukkit.getWorld("world") == null) return null;
+        return Bukkit.getWorld("world").getChunkAt(numbers.get(0).intValue(), numbers.get(1).intValue());
     }
 
     private final boolean USE_BLUEMAP_ADDON;
@@ -87,7 +120,6 @@ public class FactionMapRenderService {
         faction.getFactionMarkerSet().getMarkers().put("claimedLand " + faction.getFactionMarkerSet().getMarkers().size(), shapeMarker);
 
         // Redraw all the marker on the map
-        System.out.println(BlueMapAPI.getInstance().isPresent());
         BlueMapAPI.onEnable(api -> {
             api.getWorld(Bukkit.getWorld("world")).ifPresent(world -> {
                 for (BlueMapMap map : world.getMaps()) {
