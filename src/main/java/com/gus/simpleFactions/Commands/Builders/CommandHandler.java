@@ -21,7 +21,7 @@ public abstract class CommandHandler extends BukkitCommand {
         this.setDescription(description);
         this.setPermission(permission);
         this.setUsage(usage);
-        this.setPermissionMessage(ChatColor.RED + "You do not have permission!");
+        this.setPermissionMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission!");
 
         try {
             // This is used to register the command on the server and not use the plugin.yml

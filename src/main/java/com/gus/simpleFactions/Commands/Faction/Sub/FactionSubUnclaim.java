@@ -23,8 +23,9 @@ public class FactionSubUnclaim implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the unclaim land command
-                You can unclaim land your faction owns""";
+                Releases the faction claim for the chunk you are standing in.
+                The chunk must be owned by your faction and must be in the overworld.
+                Unclaiming removes the land from faction protection and map tracking.""";
     }
 
     @Override
@@ -50,7 +51,7 @@ public class FactionSubUnclaim implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 

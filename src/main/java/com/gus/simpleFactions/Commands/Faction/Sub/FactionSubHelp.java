@@ -22,8 +22,9 @@ public class FactionSubHelp implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the help command for factions
-                If your are lost and doesn't know what to do, this is the command for you!""";
+                Shows faction help and available commands.
+                Use this when you need a quick overview of what SimpleFactions can do.
+                For detailed syntax, run a command incorrectly or check its usage line.""";
     }
 
     @Override

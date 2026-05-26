@@ -24,8 +24,9 @@ public class FactionSubRankManagePlayerList implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the rank manage player list command
-                You can list all the players for a rank""";
+                Lists all faction members assigned to a rank.
+                Use it to review rank membership before changing permissions or removing players.
+                This command does not modify the rank.""";
     }
 
     @Override
@@ -51,10 +52,10 @@ public class FactionSubRankManagePlayerList implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 
-        //        player.sendMessage(plugin.factionManager.factionFormatterService.SendRankPlayerInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[4]));
+        player.sendMessage(plugin.factionManager.factionFormatterService.SendRankPlayerInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[4]));
     }
 }

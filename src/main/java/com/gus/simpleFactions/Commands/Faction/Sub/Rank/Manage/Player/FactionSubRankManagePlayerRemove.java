@@ -24,8 +24,9 @@ public class FactionSubRankManagePlayerRemove implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the rank manage player remove command
-                You can remove a player from a rank""";
+                Removes a faction member from a rank.
+                This command requires confirmation because it can remove active permissions.
+                The target player remains in the faction unless removed with the kick command.""";
     }
 
     @Override
@@ -51,7 +52,7 @@ public class FactionSubRankManagePlayerRemove implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 

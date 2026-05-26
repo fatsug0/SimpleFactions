@@ -23,8 +23,9 @@ public class FactionSubRankCreate implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the rank create command
-                You can create a rank for your faction""";
+                Creates a new rank in your faction.
+                New ranks start without members and without custom permissions.
+                Use rank manage commands after creation to assign players and permissions.""";
     }
 
     @Override
@@ -50,7 +51,7 @@ public class FactionSubRankCreate implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 

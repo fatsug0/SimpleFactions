@@ -25,9 +25,9 @@ public class FactionSubInvite implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the invite command
-                You can invite players to your faction
-                After invite, the player in question will have to accept your invitation to join""";
+                Sends a faction invitation to another player.
+                The invited player must accept the invitation with the join command before becoming a member.
+                Use this to grow your faction without directly forcing players into it.""";
     }
 
     @Override
@@ -53,7 +53,7 @@ public class FactionSubInvite implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 

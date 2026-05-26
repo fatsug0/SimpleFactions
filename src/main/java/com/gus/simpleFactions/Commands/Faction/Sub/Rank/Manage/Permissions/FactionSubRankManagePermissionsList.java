@@ -23,8 +23,9 @@ public class FactionSubRankManagePermissionsList implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the rank manage permissions list command
-                You can list all the permissions for a rank""";
+                Lists all permissions assigned to a faction rank.
+                Use it to audit what commands and actions a rank can access.
+                This command does not change rank configuration.""";
     }
 
     @Override
@@ -50,10 +51,10 @@ public class FactionSubRankManagePermissionsList implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 
-        //        player.sendMessage(plugin.factionManager.factionFormatterService.SendRankPermissionsInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[4]));
+        player.sendMessage(plugin.factionManager.factionFormatterService.SendRankPermissionsInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), args[4]));
     }
 }

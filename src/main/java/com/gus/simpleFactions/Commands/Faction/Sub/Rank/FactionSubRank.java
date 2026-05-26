@@ -22,9 +22,9 @@ public class FactionSubRank implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the rank command
-                You can create, delete, list, manage ranks for your faction
-                You can also view the info for all the faction ranks""";
+                Command group for faction ranks.
+                Use it to create, delete, inspect, and manage ranks inside your faction.
+                Rank management controls member groups and their faction permissions.""";
     }
 
     @Override

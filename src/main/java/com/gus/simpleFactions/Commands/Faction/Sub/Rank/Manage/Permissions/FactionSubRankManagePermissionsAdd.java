@@ -24,9 +24,9 @@ public class FactionSubRankManagePermissionsAdd implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the rank manage permissions add command
-                You can add a or more permissions for a rank
-                The added permissions will be added to all players in the faction from that rank""";
+                Adds one or more permissions to a faction rank.
+                Every player currently in the rank receives the new permissions immediately.
+                Use full permission nodes, such as simplefactions.claim or simplefactions.invite.""";
     }
 
     @Override
@@ -52,7 +52,7 @@ public class FactionSubRankManagePermissionsAdd implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 

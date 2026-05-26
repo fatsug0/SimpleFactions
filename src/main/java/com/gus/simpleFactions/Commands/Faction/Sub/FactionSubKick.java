@@ -25,8 +25,9 @@ public class FactionSubKick implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the kick command
-                You can kick a player from your faction""";
+                Removes a player from your faction.
+                This command requires confirmation because it changes faction membership.
+                The target player must currently belong to your faction.""";
     }
 
     @Override
@@ -52,7 +53,7 @@ public class FactionSubKick implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 

@@ -21,9 +21,9 @@ public class FactionSubRankManagePlayer implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the rank manage player command
-                You can add, remove a or more players for a rank
-                You can also list all the players for a rank""";
+                Command group for rank membership.
+                Use it to add players to a rank, remove players from a rank, or list rank members.
+                A player's rank controls which faction permissions they receive.""";
     }
 
     @Override

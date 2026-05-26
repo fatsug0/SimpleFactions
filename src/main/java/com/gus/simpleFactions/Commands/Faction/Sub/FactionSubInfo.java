@@ -22,8 +22,9 @@ public class FactionSubInfo implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the info command for factions
-                You can get all important info about your faction""";
+                Displays important information about your current faction.
+                Shows faction details such as members, power, claims, ranks, and other status data.
+                You must be a member of a faction to use this command.""";
     }
 
     @Override

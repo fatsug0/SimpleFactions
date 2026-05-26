@@ -42,109 +42,111 @@ public class FactionFormatterService {
                 "§e§l=======================";
     }
 
-//    public String getAllRankInfo(FactionObject faction){
-//        if (faction.getFactionRanks().isEmpty()) {
-//            return "§cNo ranks exist in this faction.";
-//        }
-//
-//        StringBuilder info = new StringBuilder();
-//        info.append("§e§l=== All Ranks in §a§l").append(faction.getFactionName()).append(" §e§l===\n");
-//        for (FactionRankObject rank : faction.getFactionRanks()) {
-//            int memberCount = 0;
-//            for (FactionRankObject playerRank : faction.getFactionRanks()) {
-//                if (playerRank.getRankName().equals(rank.getRankName())) {
-//                    memberCount++;
-//                }
-//            }
-//            info.append("§b§l").append(rank.getRankName()).append("§7: §a").append(memberCount).append(" members, §6").append(rank.getPermissions().size()).append(" permissions\n");
-//        }
-//        info.append("§e§l=======================");
-//
-//        return info.toString();
-//    }
-//
-//    public String getRankInfo(FactionObject faction, String rankName){
-//        FactionRankObject targetRank = null;
-//        for (FactionRankObject rank : faction.getExistingFactionRankObjects()) {
-//            if (rank.getRankName().equalsIgnoreCase(rankName)) {
-//                targetRank = rank;
-//                break;
-//            }
-//        }
-//        if (targetRank == null) {
-//            return "§cRank '" + rankName + "' does not exist.";
-//        }
-//
-//        int memberCount = 0;
-//        for (FactionRankObject playerRank : faction.getFactionRanks().values()) {
-//            if (playerRank.getRankName().equals(rankName)) {
-//                memberCount++;
-//            }
-//        }
-//
-//        return "§e§l=== Rank Info: §b§l" + rankName + " §e§l===\n" +
-//                "§7Members: §a" + memberCount + "\n" +
-//                "§7Permissions: §6" + targetRank.getPermissions().size() + "\n" +
-//                "§e§l=======================";
-//    }
-//
-//    public String SendRankPlayerInfo(FactionObject faction, String rankName){
-//        FactionRankObject targetRank = null;
-//        for (FactionRankObject rank : faction.getExistingFactionRankObjects()) {
-//            if (rank.getRankName().equalsIgnoreCase(rankName)) {
-//                targetRank = rank;
-//                break;
-//            }
-//        }
-//        if (targetRank == null) {
-//            return "§cRank '" + rankName + "' does not exist.";
-//        }
-//
-//        StringBuilder info = new StringBuilder();
-//        info.append("§e§l=== Players in Rank: §b§l").append(rankName).append(" §e§l===\n");
-//        boolean hasMembers = false;
-//        for (Map.Entry<UUID, FactionRankObject> entry : faction.getFactionRanks().entrySet()) {
-//            if (entry.getValue().getRankName().equals(rankName)) {
-//                Player player = Bukkit.getPlayer(entry.getKey());
-//                if (player != null) {
-//                    info.append("§a- ").append(player.getName()).append("\n");
-//                    hasMembers = true;
-//                }
-//            }
-//        }
-//        if (!hasMembers) {
-//            info.append("§7No players in this rank.\n");
-//        }
-//        info.append("§e§l=======================");
-//
-//        return info.toString();
-//    }
-//
-//    public String SendRankPermissionsInfo(FactionObject faction, String rankName){
-//        FactionRankObject targetRank = null;
-//        for (FactionRankObject rank : faction.getExistingFactionRankObjects()) {
-//            if (rank.getRankName().equalsIgnoreCase(rankName)) {
-//                targetRank = rank;
-//                break;
-//            }
-//        }
-//        if (targetRank == null) {
-//            return "§cRank '" + rankName + "' does not exist.";
-//        }
-//
-//        StringBuilder info = new StringBuilder();
-//        info.append("§e§l=== Permissions for Rank: §b§l").append(rankName).append(" §e§l===\n");
-//        if (targetRank.getPermissions().isEmpty()) {
-//            info.append("§7No permissions assigned.\n");
-//        } else {
-//            for (String perm : targetRank.getPermissions()) {
-//                info.append("§6- ").append(perm).append("\n");
-//            }
-//        }
-//        info.append("§e§l=======================");
-//
-//        return info.toString();
-//    }
+    public String getAllRankInfo(FactionObject faction){
+        if (faction.getFactionRanks().isEmpty()) {
+            return "§cNo ranks exist in this faction.";
+        }
+
+        StringBuilder info = new StringBuilder();
+        info.append("§e§l=== All Ranks in §a§l").append(faction.getFactionName()).append(" §e§l===\n");
+        for (FactionRankObject rank : faction.getFactionRanks()) {
+            int memberCount = 0;
+            for (FactionRankObject playerRank : faction.getFactionRanks()) {
+                if (playerRank.getRankName().equals(rank.getRankName())) {
+                    memberCount++;
+                }
+            }
+            info.append("§b§l").append(rank.getRankName()).append("§7: §a").append(memberCount).append(" members, §6").append(rank.getPermissions().size()).append(" permissions\n");
+        }
+        info.append("§e§l=======================");
+
+        return info.toString();
+    }
+
+    public String getRankInfo(FactionObject faction, String rankName){
+        FactionRankObject targetRank = null;
+        for (FactionRankObject rank : faction.getFactionRanks()) {
+            if (rank.getRankName().equalsIgnoreCase(rankName)) {
+                targetRank = rank;
+                break;
+            }
+        }
+        if (targetRank == null) {
+            return "§cRank '" + rankName + "' does not exist.";
+        }
+
+        int memberCount = 0;
+        for (FactionRankObject playerRank : faction.getFactionRanks()) {
+            if (playerRank.getRankName().equals(rankName)) {
+                memberCount++;
+            }
+        }
+
+        return "§e§l=== Rank Info: §b§l" + rankName + " §e§l===\n" +
+                "§7Members: §a" + memberCount + "\n" +
+                "§7Permissions: §6" + targetRank.getPermissions().size() + "\n" +
+                "§e§l=======================";
+    }
+
+    public String SendRankPlayerInfo(FactionObject faction, String rankName){
+        FactionRankObject targetRank = null;
+        for (FactionRankObject rank : faction.getFactionRanks()) {
+            if (rank.getRankName().equalsIgnoreCase(rankName)) {
+                targetRank = rank;
+                break;
+            }
+        }
+        if (targetRank == null) {
+            return "§cRank '" + rankName + "' does not exist.";
+        }
+
+        StringBuilder info = new StringBuilder();
+        info.append("§e§l=== Players in Rank: §b§l").append(rankName).append(" §e§l===\n");
+        boolean hasMembers = false;
+        for (FactionRankObject rank : faction.getFactionRanks()) {
+            if (rank.getRankName().equals(rankName)) {
+                for (UUID playerUUID : rank.getRankMembers()) {
+                    Player player = Bukkit.getPlayer(playerUUID);
+                    if (player != null) {
+                        info.append("§a- ").append(player.getName()).append("\n");
+                        hasMembers = true;
+                    }
+                }
+            }
+        }
+        if (!hasMembers) {
+            info.append("§7No players in this rank.\n");
+        }
+        info.append("§e§l=======================");
+
+        return info.toString();
+    }
+
+    public String SendRankPermissionsInfo(FactionObject faction, String rankName){
+        FactionRankObject targetRank = null;
+        for (FactionRankObject rank : faction.getFactionRanks()) {
+            if (rank.getRankName().equalsIgnoreCase(rankName)) {
+                targetRank = rank;
+                break;
+            }
+        }
+        if (targetRank == null) {
+            return "§cRank '" + rankName + "' does not exist.";
+        }
+
+        StringBuilder info = new StringBuilder();
+        info.append("§e§l=== Permissions for Rank: §b§l").append(rankName).append(" §e§l===\n");
+        if (targetRank.getPermissions().isEmpty()) {
+            info.append("§7No permissions assigned.\n");
+        } else {
+            for (String perm : targetRank.getPermissions()) {
+                info.append("§6- ").append(perm).append("\n");
+            }
+        }
+        info.append("§e§l=======================");
+
+        return info.toString();
+    }
 
     public void SendHelp(UUID player){
         // Here we explain the use of the faction command

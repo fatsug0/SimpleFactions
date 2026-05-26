@@ -22,8 +22,9 @@ public class FactionSubLeave implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the leave command
-                You can leave your current faction""";
+                Leaves your current faction.
+                This command requires confirmation and removes you from the faction team and member list.
+                Faction owners must disband or transfer ownership instead of leaving directly.""";
     }
 
     @Override

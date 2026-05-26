@@ -23,10 +23,9 @@ public class FactionSubClaim implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the claim land command
-                You can claim land for your faction
-                You can only claim land if you are beside your faction territory
-                It will claim the current chunk you are standing in""";
+                Claims the chunk you are currently standing in for your faction.
+                Claims must be in the overworld and must connect to your existing territory after your first claim.
+                If your faction has no full claims left, the command may create a weak claim if weak claims are enabled.""";
     }
 
     @Override
@@ -52,7 +51,7 @@ public class FactionSubClaim implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
         plugin.factionManager.factionLandService.ClaimLand(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), player.getUniqueId());

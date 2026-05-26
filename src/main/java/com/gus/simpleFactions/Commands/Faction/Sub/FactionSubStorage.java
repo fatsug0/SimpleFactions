@@ -26,10 +26,9 @@ public class FactionSubStorage implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the faction storage,
-                every faction has the equivalent of 2 double chest of storage accessible via this command
-                Every member of every rank has access to this storage.
-                """;
+                Opens your faction shared storage.
+                Every faction has a shared 54-slot inventory that members can access.
+                Items placed here are saved with the faction data.""";
     }
 
     @Override

@@ -23,10 +23,9 @@ public class FactionSubCreate implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the create faction command
-                You can create a faction for yourself
-                You will automatically be the leader of the faction with full power
-                You can now claim land, invite other players and more!""";
+                Creates a new faction with you as the owner.
+                The faction starts with the configured base power and default OWNER and MEMBER ranks.
+                You cannot create a faction while you already belong to one.""";
     }
 
     @Override

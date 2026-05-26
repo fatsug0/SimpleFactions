@@ -22,7 +22,10 @@ public class FactionSubHomeSet implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the home set command";
+        return """
+                Sets your faction home to your current location.
+                The location must be inside land claimed by your faction.
+                Members can later teleport to this location with the home command.""";
     }
 
     @Override
@@ -48,7 +51,7 @@ public class FactionSubHomeSet implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 

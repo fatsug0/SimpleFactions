@@ -24,9 +24,9 @@ public class FactionSubRankManagePermissionsRemove implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the rank manage permissions remove command
-                You can remove a permission for a rank
-                The removed permission will be removed from all players in the faction from that rank""";
+                Removes one or more permissions from a faction rank.
+                Every player currently in the rank loses the removed permissions immediately.
+                Use this to reduce access without deleting the rank itself.""";
     }
 
     @Override
@@ -52,7 +52,7 @@ public class FactionSubRankManagePermissionsRemove implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 

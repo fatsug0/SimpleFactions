@@ -22,9 +22,9 @@ public class FactionSubRankManage implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the rank manage command
-                You can manage the permissions and players for a rank
-                You can also view the info for a rank""";
+                Command group for editing a specific faction rank.
+                Use it to manage players, manage permissions, or inspect one rank in detail.
+                Changes affect how members in that rank interact with faction commands.""";
     }
 
     @Override

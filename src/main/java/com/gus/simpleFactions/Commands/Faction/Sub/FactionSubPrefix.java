@@ -26,11 +26,9 @@ public class FactionSubPrefix implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the prefix command
-                You can set the prefix for your faction
-                Also the color of the prefix, use one color for a solid color
-                You can also create a gradient prefix with two to five different colors
-                """;
+                Sets the display prefix for your faction.
+                Provide one color for a solid prefix, or two to five colors to create a gradient.
+                The prefix is used for faction formatting such as team display and chat styling.""";
     }
 
     @Override
@@ -56,7 +54,7 @@ public class FactionSubPrefix implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 

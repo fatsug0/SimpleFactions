@@ -24,11 +24,11 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
                 "faction",
                 new String[]{"f", "fac"},
                 """
-                        This is the faction command
-                        This is the main command for factions
-                        You can claim land, invite players, create ranks, etc""",
+                        Main command for SimpleFactions.
+                        Use it to create and manage factions, claims, homes, raids, storage, invites, ranks, and faction members.
+                        Run a subcommand to perform a specific faction action.""",
                 null,
-                "/faction <options>"
+                "/faction <admin|help|info|invite|join|kick|leave|unclaim|prefix|raid|storage>"
         );
         this.plugin = plugin;
     }
@@ -50,10 +50,8 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
             put("unclaim", new FactionSubUnclaim(plugin));
             put("prefix", new FactionSubPrefix(plugin));
             put("raid", new FactionSubRaid(plugin));
-            put("toggle", new FactionSubToggle(plugin));
             put("storage", new FactionSubStorage(plugin));
             put("admin", new  FactionSubAdmin(plugin));
-            put("save", new FactionSubSave(plugin));
         }};
     }
 
@@ -88,9 +86,14 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
             }
         }
 
+        if (!canAccess(player, command)) return Collections.emptyList();
+
         //region Special cases for onTabComplete
         switch (command.getName()) {
             case "invite":
+                if (!plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())) {
+                    return Collections.emptyList();
+                }
 
                 // Get all players online on the server
                 ArrayList<Player> invitePlayers = new ArrayList<>(Bukkit.getOnlinePlayers());
@@ -120,6 +123,9 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
                 return invitePlayersNames;
 
             case "kick":
+                if (!plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())) {
+                    return Collections.emptyList();
+                }
 
                 // Get all players in the faction
                 ArrayList<UUID> kickPlayers = new ArrayList<>(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()).getFactionMembers());
@@ -160,7 +166,7 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
 
                     // Remove all permissions already in the rank
                 } else {
-                    return new ArrayList<>(command.getSubCommands().keySet());
+                    return accessibleSubCommands(player, command, args[args.length - 1]);
                 }
 
             case "remove":
@@ -171,7 +177,7 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
                 } else if (command.getPermission().equalsIgnoreCase("simplefactions.rank.manage.permissions.remove")) {
                     // Get all permissions in the rank
                 } else {
-                    return new ArrayList<>(command.getSubCommands().keySet());
+                    return accessibleSubCommands(player, command, args[args.length - 1]);
                 }
 
             case "toggle":
@@ -192,6 +198,54 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
                         return Arrays.asList("enable", "disable");
                 }
 
+            case "admin":
+                if (!player.hasPermission("simplefactions.admin")) return Collections.emptyList();
+                switch (args.length) {
+                    case 2:
+                        return Arrays.asList("summary", "factions", "info", "members", "claims", "inspect", "claim", "unclaim", "power", "disband", "raids", "save", "help");
+                    case 3:
+                        if (args[1].equalsIgnoreCase("unclaim")) {
+                            return Collections.singletonList(String.valueOf(player.getLocation().getChunk().getX()));
+                        }
+                        if (Arrays.asList("info", "members", "claims", "claim", "power", "disband").contains(args[1].toLowerCase())) {
+                            ArrayList<String> factionNames = new ArrayList<>();
+                            for (FactionObject faction : plugin.factionManager.factionMembershipService.getExistingFactions()) {
+                                factionNames.add(faction.getFactionName());
+                            }
+                            return factionNames;
+                        }
+                        if (args[1].equalsIgnoreCase("inspect")) {
+                            ArrayList<String> onlinePlayers = new ArrayList<>();
+                            for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                                onlinePlayers.add(onlinePlayer.getName());
+                            }
+                            return onlinePlayers;
+                        }
+                        break;
+                    case 4:
+                        if (args[1].equalsIgnoreCase("claim")) {
+                            return Collections.singletonList(String.valueOf(player.getLocation().getChunk().getX()));
+                        }
+                        if (args[1].equalsIgnoreCase("unclaim")) {
+                            return Collections.singletonList(String.valueOf(player.getLocation().getChunk().getZ()));
+                        }
+                        if (args[1].equalsIgnoreCase("disband")) {
+                            return Collections.singletonList("confirm");
+                        }
+                        break;
+                    case 5:
+                        if (args[1].equalsIgnoreCase("claim")) {
+                            return Collections.singletonList(String.valueOf(player.getLocation().getChunk().getZ()));
+                        }
+                        break;
+                    case 6:
+                        if (args[1].equalsIgnoreCase("claim")) {
+                            return Arrays.asList("hard", "weak");
+                        }
+                        break;
+                }
+                break;
+
             case "join":
                 ArrayList<String> joinableFactions = new ArrayList<>();
                 for (FactionObject faction : plugin.factionManager.factionMembershipService.getPlayerInvites(player.getUniqueId())) {
@@ -204,7 +258,35 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
         }
 
 
-        return new ArrayList<>(command.getSubCommands().keySet());
+        return accessibleSubCommands(player, command, args.length == 0 ? "" : args[args.length - 1]);
+    }
+
+    private List<String> accessibleSubCommands(Player player, CommandInterface command, String typedPrefix) {
+        ArrayList<String> completions = new ArrayList<>();
+        for (Map.Entry<String, CommandInterface> entry : command.getSubCommands().entrySet()) {
+            if (!canCompleteSubCommand(player, entry.getValue())) continue;
+            if (typedPrefix != null && !typedPrefix.isBlank() && !entry.getKey().toLowerCase().startsWith(typedPrefix.toLowerCase())) continue;
+            completions.add(entry.getKey());
+        }
+        Collections.sort(completions);
+        return completions;
+    }
+
+    private boolean canAccess(Player player, CommandInterface command) {
+        String permission = command.getPermission();
+        return permission == null || permission.isBlank() || player.hasPermission(permission);
+    }
+
+    private boolean canCompleteSubCommand(Player player, CommandInterface command) {
+        if (!canAccess(player, command)) return false;
+
+        if (command.getPermission() == null || command.getPermission().isBlank()) {
+            return command.getSubCommands().isEmpty()
+                    || command.getName().equalsIgnoreCase("home")
+                    || command.getSubCommands().values().stream().anyMatch(subCommand -> canCompleteSubCommand(player, subCommand));
+        }
+
+        return true;
     }
 
     private Player checkPlayer(UUID playerUUID) {

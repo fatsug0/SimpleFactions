@@ -21,7 +21,10 @@ public class FactionSubHome implements CommandInterface {
 
     @Override
     public String getDescription() {
-        return "This is the home command";
+        return """
+                Teleports you to your faction home.
+                Your faction must have a home set before this command can be used.
+                Use the set subcommand to define the home location.""";
     }
 
     @Override
@@ -47,8 +50,7 @@ public class FactionSubHome implements CommandInterface {
             sendUsageError();
             return;
         }
-
-
+        
         plugin.factionManager.factionMembershipService.TeleportHome(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), player.getUniqueId());
     }
 }

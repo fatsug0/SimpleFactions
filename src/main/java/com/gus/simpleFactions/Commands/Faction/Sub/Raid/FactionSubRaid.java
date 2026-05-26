@@ -24,12 +24,9 @@ public class FactionSubRaid implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the raid faction command
-                With this command you can raid a factions weak chunks
-                The raid date format is the following: DD-MM-YYYY:TTTT (UTC + 0)
-                With DD being day, MM being month and YYYY being year and TTTTT being time (24 hour format or military time)
-                The chunks cords format is the following: X,Z (you get those with BlueMap)
-                """;
+                Starts or schedules a raid against another faction's weak claim.
+                Provide the target faction, the raid date, confirmation, and the selected chunk.
+                Dates use DD-MM-YYYY:HHMM in UTC.""";
     }
 
     @Override
@@ -51,13 +48,13 @@ public class FactionSubRaid implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length != 5 || !args[args.length - 1].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())) {
+        if (args.length != 4 || !args[args.length - 1].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())) {
             sender.sendMessage(sendUsageError());
             return;
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 
@@ -66,10 +63,12 @@ public class FactionSubRaid implements CommandInterface {
             if (faction.getFactionName().equals(args[1])) {
                 defendingFaction = faction;
                 break;
-            } else {
-                player.sendMessage(ChatColor.RED + "The defending faction you tried to attack doesn't exists!");
-                return;
             }
+        }
+
+        if (defendingFaction == null) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The defending faction you tried to attack doesn't exists!");
+            return;
         }
 
         plugin.raidManager.SendRaidDeclaration(

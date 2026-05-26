@@ -23,8 +23,9 @@ public class FactionSubRankInfo implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the rank info command
-                You can get all important info about all ranks in your faction""";
+                Shows an overview of your faction ranks.
+                Use it to review existing ranks, assigned members, and configured permissions.
+                For one specific rank, use the rank manage info command.""";
     }
 
     @Override
@@ -49,6 +50,6 @@ public class FactionSubRankInfo implements CommandInterface {
             return;
         }
 
-        //        player.sendMessage(plugin.factionManager.factionFormatterService.getAllRankInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId())));
+        player.sendMessage(plugin.factionManager.factionFormatterService.getAllRankInfo(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId())));
     }
 }

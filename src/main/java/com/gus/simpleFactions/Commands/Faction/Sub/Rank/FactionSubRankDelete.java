@@ -23,8 +23,9 @@ public class FactionSubRankDelete implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the rank delete command
-                You can delete a rank for your faction""";
+                Deletes a rank from your faction.
+                This command requires confirmation because members assigned to that rank will lose it.
+                Use it only after moving affected players to another rank when needed.""";
     }
 
     @Override
@@ -44,13 +45,13 @@ public class FactionSubRankDelete implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length != 4 && !args[3].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())){
+        if (args.length != 4 || !args[3].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())){
             sender.sendMessage(sendUsageError());
             return;
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 

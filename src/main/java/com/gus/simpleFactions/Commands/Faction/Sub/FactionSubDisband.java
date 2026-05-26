@@ -23,11 +23,9 @@ public class FactionSubDisband implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the disband faction command
-                You can disband your faction if you are the owner of it
-                It will delete all the land in your territory and delete your faction
-                It will also make all the members of your faction, factionless
-                Use carefully as this cannot be undone""";
+                Permanently deletes your faction.
+                Only the faction owner can disband the faction, and the command requires confirmation.
+                All members are removed, all claims are released, and the faction team is deleted.""";
     }
 
     @Override
@@ -53,7 +51,7 @@ public class FactionSubDisband implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 

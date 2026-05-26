@@ -5,6 +5,7 @@ import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
@@ -25,8 +26,9 @@ public class FactionSubRankManagePlayerAdd implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the rank manage player add command
-                You can add a player to a rank""";
+                Adds a faction member to a rank.
+                The player receives that rank's permissions immediately when online.
+                The target player must belong to your faction.""";
     }
 
     @Override
@@ -52,10 +54,21 @@ public class FactionSubRankManagePlayerAdd implements CommandInterface {
         }
 
         if (getPermission() != null && !player.hasPermission(getPermission())) {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use this command!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 
-        plugin.factionManager.factionRankService.AddPlayerToRank(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), Objects.requireNonNull(Bukkit.getPlayer(args[5])), args[4]);
+        OfflinePlayer targetPlayer = Bukkit.getOfflinePlayer(args[5]);
+
+        if (!targetPlayer.hasPlayedBefore() && !targetPlayer.isOnline()) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "That player could not be found!");
+            return;
+        }
+
+        plugin.factionManager.factionRankService.AddPlayerToRank(
+                plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()),
+                targetPlayer.getUniqueId(),
+                args[4]
+        );
     }
 }

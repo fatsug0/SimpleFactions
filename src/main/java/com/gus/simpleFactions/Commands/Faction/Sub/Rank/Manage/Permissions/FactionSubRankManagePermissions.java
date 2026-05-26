@@ -21,9 +21,9 @@ public class FactionSubRankManagePermissions implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the rank manage permissions command
-                You can add, remove a or more permissions for a rank
-                You can also list all the permissions for a rank""";
+                Command group for rank permissions.
+                Use it to add, remove, or list command permissions assigned to a faction rank.
+                Permission changes apply to every player currently assigned to that rank.""";
     }
 
     @Override

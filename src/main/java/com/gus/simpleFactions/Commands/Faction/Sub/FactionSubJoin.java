@@ -22,9 +22,9 @@ public class FactionSubJoin implements CommandInterface {
     @Override
     public String getDescription() {
         return """
-                This is the join command
-                If you are invited, you can join the faction you were invited to
-                You have to leave your current faction before joining another one""";
+                Joins a faction that has invited you.
+                The faction name must match a pending invitation for your player.
+                If you already belong to a faction, the join flow may remove you from the old faction first.""";
     }
 
     @Override

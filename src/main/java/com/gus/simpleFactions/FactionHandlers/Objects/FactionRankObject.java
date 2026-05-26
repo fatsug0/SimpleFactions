@@ -10,16 +10,16 @@ public class FactionRankObject {
 
     public FactionRankObject(@Nullable String rankName, @Nullable FactionRankObjectWrapper wrappedFactionRankObject) {
         if (wrappedFactionRankObject == null) {
-            this.rankName = rankName;
+            this.rankName = normalizeRankName(rankName);
         } else {
-            this.rankName = wrappedFactionRankObject.getRankName();
+            this.rankName = normalizeRankName(wrappedFactionRankObject.getRankName());
             wrappedFactionRankObject.getRankMembers().forEach(playerUUID -> {
                 try {
-                    this.rankMembers.add(UUID.fromString(playerUUID));
+                    addRankMember(UUID.fromString(playerUUID));
                 } catch (IllegalArgumentException ignored) {
                 }
             });
-            this.permissions.addAll(wrappedFactionRankObject.getPermissions());
+            wrappedFactionRankObject.getPermissions().forEach(this::addPermission);
         }
     }
 
@@ -28,13 +28,23 @@ public class FactionRankObject {
         return rankName;
     }
 
+    private String normalizeRankName(String rankName) {
+        if (rankName == null) {
+            return null;
+        }
 
-    private ArrayList<UUID> rankMembers = new ArrayList<>();
+        return rankName.trim().toUpperCase();
+    }
+
+
+    private final ArrayList<UUID> rankMembers = new ArrayList<>();
     public ArrayList<UUID> getRankMembers() {
         return rankMembers;
     }
     public void addRankMember(UUID playerUUID){
-        rankMembers.add(playerUUID);
+        if (playerUUID != null && !rankMembers.contains(playerUUID)) {
+            rankMembers.add(playerUUID);
+        }
     }
     public void removeRankMember(UUID playerUUID){
         rankMembers.remove(playerUUID);
@@ -44,12 +54,14 @@ public class FactionRankObject {
     }
 
 
-    private ArrayList<String> permissions = new ArrayList<>();
+    private final ArrayList<String> permissions = new ArrayList<>();
     public ArrayList<String> getPermissions() {
         return permissions;
     }
     public void addPermission(String permission){
-        permissions.add(permission);
+        if (permission != null && !permission.isBlank() && !permissions.contains(permission)) {
+            permissions.add(permission);
+        }
     }
     public void removePermission(String permission){
         permissions.remove(permission);
