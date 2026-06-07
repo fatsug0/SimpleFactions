@@ -13,12 +13,14 @@ import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scoreboard.Team;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -63,7 +65,19 @@ public class FactionSubAdmin implements CommandInterface {
 
     @Override
     public ItemStack getIcon() {
-        return new ItemStack(Material.COMMAND_BLOCK);
+        ItemStack item = new ItemStack(Material.COMMAND_BLOCK);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Admin Tools");
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.DARK_GRAY + "────────────────────");
+        for (String line : getDescription().strip().split("\\R")) {
+            String trimmed = line.trim();
+            if (!trimmed.isBlank()) lore.add(ChatColor.GRAY + trimmed);
+        }
+        lore.add(ChatColor.DARK_GRAY + "────────────────────");
+        meta.setLore(lore);
+        item.setItemMeta(meta);
+        return item;
     }
 
     @Override
