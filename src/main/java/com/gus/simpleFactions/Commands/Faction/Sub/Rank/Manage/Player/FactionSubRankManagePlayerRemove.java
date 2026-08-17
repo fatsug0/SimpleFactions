@@ -7,13 +7,13 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 
 public class FactionSubRankManagePlayerRemove implements CommandInterface {
 
@@ -45,6 +45,11 @@ public class FactionSubRankManagePlayerRemove implements CommandInterface {
     }
 
     @Override
+    public String getId() {
+        return "rank.manage.player.remove";
+    }
+
+    @Override
     public HashMap<String, CommandInterface> getSubCommands() {
         return new HashMap<>();
     }
@@ -53,6 +58,7 @@ public class FactionSubRankManagePlayerRemove implements CommandInterface {
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.SKELETON_SKULL);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Remove Rank Player");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");
@@ -68,7 +74,7 @@ public class FactionSubRankManagePlayerRemove implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length != 7 && !args[6].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())){
+        if (args.length != 7 || !args[6].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())){
             sender.sendMessage(sendUsageError());
             return;
         }
@@ -78,6 +84,11 @@ public class FactionSubRankManagePlayerRemove implements CommandInterface {
             return;
         }
 
-        plugin.factionManager.factionRankService.RemovePlayerFromRank(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), Objects.requireNonNull(Bukkit.getPlayer(args[4])), args[1]);
+        Player targetPlayer = Bukkit.getPlayer(args[5]);
+        if (targetPlayer == null) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "Player not found or not online!");
+            return;
+        }
+        plugin.factionManager.factionRankService.RemovePlayerFromRank(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), targetPlayer, args[4]);
     }
 }

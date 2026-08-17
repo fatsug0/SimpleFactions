@@ -12,6 +12,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scoreboard.Team;
@@ -54,8 +55,18 @@ public class FactionSubAdmin implements CommandInterface {
     }
 
     @Override
+    public boolean requiresFaction() {
+        return false;
+    }
+
+    @Override
     public String getUsage() {
         return "/faction admin <summary|factions|info|members|claims|inspect|claim|unclaim|power|disband|raids|save>";
+    }
+
+    @Override
+    public String getId() {
+        return "admin";
     }
 
     @Override
@@ -67,6 +78,7 @@ public class FactionSubAdmin implements CommandInterface {
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.COMMAND_BLOCK);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Admin Tools");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");
@@ -275,7 +287,7 @@ public class FactionSubAdmin implements CommandInterface {
         }
 
         plugin.factionManager.factionLandService.addLinkedChunk(chunk, faction);
-        redrawClaim(faction, chunk, weak);
+        redrawClaims(faction);
         updatePlayersInChunk(chunk);
         sender.sendMessage(ChatColor.GREEN + "Forced " + (weak ? "weak" : "hard") + " claim " + formatLocation(chunk) + " for " + faction.getFactionName() + ".");
     }
@@ -336,10 +348,16 @@ public class FactionSubAdmin implements CommandInterface {
 
         String factionName = faction.getFactionName();
         for (Chunk chunk : new ArrayList<>(faction.getHardClaimedChunks())) {
-            removeClaim(faction, chunk);
+            plugin.factionManager.factionLandService.removeLinkedChunk(chunk);
         }
         for (Chunk chunk : new ArrayList<>(faction.getWeakClaimedChunks())) {
-            removeClaim(faction, chunk);
+            plugin.factionManager.factionLandService.removeLinkedChunk(chunk);
+        }
+        faction.getHardClaimedChunks().clear();
+        faction.getWeakClaimedChunks().clear();
+
+        if (plugin.factionManager.factionMapRenderService.getUSE_BLUEMAP_ADDON()) {
+            plugin.factionManager.factionMapRenderService.RemoveFactionFromMap(faction);
         }
 
         Iterator<Map.Entry<UUID, FactionObject>> linkIterator = plugin.factionManager.factionMembershipService.getPlayerFactionLink().entrySet().iterator();
@@ -446,16 +464,12 @@ public class FactionSubAdmin implements CommandInterface {
         faction.removeHardClaimedChunks(chunk);
         faction.removeWeakClaimedChunks(chunk);
         plugin.factionManager.factionLandService.removeLinkedChunk(chunk);
-
-        if (plugin.factionManager.factionMapRenderService.getUSE_BLUEMAP_ADDON()
-                && plugin.factionManager.factionMapRenderService.getBluemapClaimedChunk().containsKey(chunk)) {
-            plugin.factionManager.factionMapRenderService.RemoveChunks(faction, chunk);
-        }
+        redrawClaims(faction);
     }
 
-    private void redrawClaim(FactionObject faction, Chunk chunk, boolean weak) {
+    private void redrawClaims(FactionObject faction) {
         if (!plugin.factionManager.factionMapRenderService.getUSE_BLUEMAP_ADDON()) return;
-        plugin.factionManager.factionMapRenderService.DrawChunks(faction, chunk, weak);
+        plugin.factionManager.factionMapRenderService.RedrawClaims(faction);
     }
 
     private void updatePlayersInChunk(Chunk chunk) {

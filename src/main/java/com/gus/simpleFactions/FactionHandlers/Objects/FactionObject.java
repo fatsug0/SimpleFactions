@@ -48,6 +48,7 @@ public class FactionObject {
             wrappedFactionObject.getRanks().forEach(factionRankObjectWrapper -> this.factionRanks.add(new FactionRankObject(factionRankObjectWrapper.getRankName(), factionRankObjectWrapper)));
             this.power = wrappedFactionObject.getPower();
             this.teamPrefix = wrappedFactionObject.getTeamPrefix();
+            this.factionColors = new ArrayList<>(wrappedFactionObject.getColors());
             wrappedFactionObject.getInv().forEach((slot, item) -> this.factionInv.setItem(slot, item));
         }
 
@@ -150,6 +151,18 @@ public class FactionObject {
     }
     public void setTeamPrefix(String teamPrefix) {
         this.teamPrefix = teamPrefix;
+    }
+
+
+    // The color(s) currently used for this faction's tab-list prefix (hex strings, e.g.
+    // "#RRGGBB"; more than one means a gradient). Kept in sync by FactionFormatterService
+    // whenever the prefix is (re)colored, and used to color the faction's BlueMap claim markers.
+    private ArrayList<String> factionColors = new ArrayList<>();
+    public ArrayList<String> getFactionColors() {
+        return this.factionColors;
+    }
+    public void setFactionColors(ArrayList<String> factionColors) {
+        this.factionColors = factionColors == null ? new ArrayList<>() : factionColors;
     }
 
 

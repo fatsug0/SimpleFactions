@@ -3,6 +3,7 @@ package com.gus.simpleFactions.FactionHandlers.FactionObjectServices;
 import com.gus.simpleFactions.Enums.PlayerChunkState;
 import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
 import com.gus.simpleFactions.SimpleFactions;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -55,8 +56,16 @@ public class FactionHelperService {
         Player owner = Bukkit.getPlayer(ownerUUID);
         if (owner == null) return;
 
-        // Create faction team
-        Team factionTeam = scoreboard.registerNewTeam("faction_" + plugin.factionManager.factionFormatterService.toTeamName(teamName));
+        // Create faction team (FactionManager#CreateFaction already checks for a name collision
+        // beforehand via teamNameTaken(), but guard here too rather than let a stray
+        // IllegalArgumentException abort the rest of faction creation, e.g. rank setup).
+        Team factionTeam;
+        try {
+            factionTeam = scoreboard.registerNewTeam(plugin.factionManager.factionFormatterService.toFullTeamName(teamName));
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Could not register scoreboard team for faction '" + teamName + "': " + e.getMessage());
+            return;
+        }
         String factionTeamPrefix = plugin.factionManager.factionFormatterService.useMiniMessage(" [" + prefix + "] ", colors);
         factionTeam.setPrefix(factionTeamPrefix);
         factionTeam.addEntry(owner.getName());
@@ -65,7 +74,7 @@ public class FactionHelperService {
     public void addPlayerToTabTeam(UUID playerUUID, String teamName) {
         Player player = Bukkit.getPlayer(playerUUID);
         if (player == null) return;
-        Team team = Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeam("faction_" + plugin.factionManager.factionFormatterService.toTeamName(teamName));
+        Team team = Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeam(plugin.factionManager.factionFormatterService.toFullTeamName(teamName));
         if (team == null) return;
         team.addEntry(player.getName());
     }
@@ -90,7 +99,23 @@ public class FactionHelperService {
 
     public boolean factionNameExists(String factionName){
         for (FactionObject faction : plugin.factionManager.factionMembershipService.getExistingFactions()){
-            if (faction.getFactionName().equals(factionName)){
+            if (faction.getFactionName().equalsIgnoreCase(factionName)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Faction names get sanitized and truncated to 16 characters for their scoreboard team
+     * (see FactionFormatterService#toTeamName). Two different names can collapse onto the same
+     * team name; registering a second team under an already-taken name throws, so this must be
+     * checked before a faction is created.
+     */
+    public boolean teamNameTaken(String factionName) {
+        String candidate = plugin.factionManager.factionFormatterService.toTeamName(factionName);
+        for (FactionObject faction : plugin.factionManager.factionMembershipService.getExistingFactions()) {
+            if (plugin.factionManager.factionFormatterService.toTeamName(faction.getFactionName()).equals(candidate)) {
                 return true;
             }
         }
@@ -105,25 +130,25 @@ public class FactionHelperService {
                 // Hard claimed
                 if (plugin.factionManager.factionHelperService.isChunkHardClaimed(plugin.factionManager.factionLandService.getLinkedChunks().get(chunkToCheck).getHardClaimedChunks(), chunkToCheck)) {
                     if (plugin.factionManager.factionLandService.getPlayerChunkState().get(playerUUID) != PlayerChunkState.HARD) {
-                        Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§6§lWelcome home (hard claim) !"));
+                        Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy(ChatColor.GOLD.toString() + ChatColor.BOLD + "Welcome home (hard claim)!"));
                         plugin.factionManager.factionLandService.getPlayerChunkState().put(playerUUID, PlayerChunkState.HARD);
                     }
                 } else { // Weak claimed
                     if (plugin.factionManager.factionLandService.getPlayerChunkState().get(playerUUID) != PlayerChunkState.WEAK) {
-                        Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§6§lWelcome home (weak claim) !"));
+                        Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy(ChatColor.GOLD.toString() + ChatColor.BOLD + "Welcome home (weak claim)!"));
                         plugin.factionManager.factionLandService.getPlayerChunkState().put(playerUUID, PlayerChunkState.WEAK);
                     }
                 }
 
             } else { // Enemy faction claim
                 if (plugin.factionManager.factionLandService.getPlayerChunkState().get(playerUUID) != PlayerChunkState.ENEMY) {
-                    Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§4§lYou have entered the " + plugin.factionManager.factionLandService.getLinkedChunks().get(chunkToCheck).getFactionName() + " faction !"));
+                    Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy(ChatColor.DARK_RED.toString() + ChatColor.BOLD + "You have entered the " + plugin.factionManager.factionLandService.getLinkedChunks().get(chunkToCheck).getFactionName() + " faction!"));
                     plugin.factionManager.factionLandService.getPlayerChunkState().put(playerUUID, PlayerChunkState.ENEMY);
                 }
             }
         } else { // Not claimed, wilderness
             if (plugin.factionManager.factionLandService.getPlayerChunkState().get(playerUUID) != PlayerChunkState.WILDERNESS) {
-                Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy("§2§lYou have entered wilderness !"));
+                Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy(ChatColor.GREEN.toString() + ChatColor.BOLD + "You have entered wilderness!"));
                 plugin.factionManager.factionLandService.getPlayerChunkState().put(playerUUID, PlayerChunkState.WILDERNESS);
             }
         }

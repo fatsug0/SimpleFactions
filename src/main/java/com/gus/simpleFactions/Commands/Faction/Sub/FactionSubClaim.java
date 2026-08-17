@@ -6,6 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -39,8 +40,18 @@ public class FactionSubClaim implements CommandInterface {
     }
 
     @Override
+    public boolean requiresInput() {
+        return false;
+    }
+
+    @Override
     public String getUsage() {
         return "/faction claim";
+    }
+
+    @Override
+    public String getId() {
+        return "claim";
     }
 
     @Override
@@ -52,6 +63,7 @@ public class FactionSubClaim implements CommandInterface {
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.GRASS_BLOCK);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Claim Land");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");

@@ -33,32 +33,32 @@ public class FactionFormatterService {
 
         // Enhanced with colors, styles, and more details
 
-        return "§e§l=== Faction Info: §a§l" + faction.getFactionName() + " §e§l===\n" +
-                "§7Owner: §b§l" + Objects.requireNonNull(Bukkit.getPlayer(faction.getOwner())).getName() + "\n" +
-                "§7Members: §a" + faction.getFactionMembers().size() + " §7(total)\n" +
-                "§7Power: §6" + faction.getPower() + " §7/ Max Weak Chunks: §c" + (int) plugin.getConfig().getDouble("weak-amount-coefficient") + "\n" +
-                "§7Claimed Chunks: §2" + faction.getHardClaimedChunks().size() + " §7(Strong) + §4" + faction.getWeakClaimedChunks().size() + " §7(Weak)\n" +
-                "§7Home: §d" + (faction.getFactionHome() != null ? "Set at " + faction.getFactionHome().getBlockX() + ", " + faction.getFactionHome().getBlockY() + ", " + faction.getFactionHome().getBlockZ() : "Not set") + "\n" +
-                "§e§l=======================";
+        // The owner may well be offline when /faction info is run - Bukkit.getPlayer() only
+        // resolves online players, so look the name up through the offline-player store instead.
+        String ownerName = Bukkit.getOfflinePlayer(faction.getOwner()).getName();
+        if (ownerName == null) ownerName = faction.getOwner().toString();
+
+        return ChatColor.YELLOW.toString() + ChatColor.BOLD + "=== Faction Info: " + ChatColor.GREEN + ChatColor.BOLD + faction.getFactionName() + " " + ChatColor.YELLOW + ChatColor.BOLD + "===\n" +
+                ChatColor.GRAY + "Owner: " + ChatColor.AQUA + ChatColor.BOLD + ownerName + "\n" +
+                ChatColor.GRAY + "Members: " + ChatColor.GREEN + faction.getFactionMembers().size() + " " + ChatColor.GRAY + "(total)\n" +
+                ChatColor.GRAY + "Power: " + ChatColor.GOLD + faction.getPower() + " " + ChatColor.GRAY + "/ Max Weak Chunks: " + ChatColor.RED + plugin.factionManager.factionLandService.getMAX_WEAK_CHUNKS(faction) + "\n" +
+                ChatColor.GRAY + "Claimed Chunks: " + ChatColor.DARK_GREEN + faction.getHardClaimedChunks().size() + " " + ChatColor.GRAY + "(Strong) + " + ChatColor.DARK_RED + faction.getWeakClaimedChunks().size() + " " + ChatColor.GRAY + "(Weak)\n" +
+                ChatColor.GRAY + "Home: " + ChatColor.LIGHT_PURPLE + (faction.getFactionHome() != null ? "Set at " + faction.getFactionHome().getBlockX() + ", " + faction.getFactionHome().getBlockY() + ", " + faction.getFactionHome().getBlockZ() : "Not set") + "\n" +
+                ChatColor.YELLOW + ChatColor.BOLD + "=======================";
     }
 
     public String getAllRankInfo(FactionObject faction){
         if (faction.getFactionRanks().isEmpty()) {
-            return "§cNo ranks exist in this faction.";
+            return ChatColor.RED + "No ranks exist in this faction.";
         }
 
         StringBuilder info = new StringBuilder();
-        info.append("§e§l=== All Ranks in §a§l").append(faction.getFactionName()).append(" §e§l===\n");
+        info.append(ChatColor.YELLOW).append(ChatColor.BOLD).append("=== All Ranks in ").append(ChatColor.GREEN).append(ChatColor.BOLD).append(faction.getFactionName()).append(ChatColor.YELLOW).append(ChatColor.BOLD).append(" ===\n");
         for (FactionRankObject rank : faction.getFactionRanks()) {
-            int memberCount = 0;
-            for (FactionRankObject playerRank : faction.getFactionRanks()) {
-                if (playerRank.getRankName().equals(rank.getRankName())) {
-                    memberCount++;
-                }
-            }
-            info.append("§b§l").append(rank.getRankName()).append("§7: §a").append(memberCount).append(" members, §6").append(rank.getPermissions().size()).append(" permissions\n");
+            int memberCount = rank.getRankMembers().size();
+            info.append(ChatColor.AQUA).append(ChatColor.BOLD).append(rank.getRankName()).append(ChatColor.GRAY).append(": ").append(ChatColor.GREEN).append(memberCount).append(" members, ").append(ChatColor.GOLD).append(rank.getPermissions().size()).append(" permissions\n");
         }
-        info.append("§e§l=======================");
+        info.append(ChatColor.YELLOW).append(ChatColor.BOLD).append("=======================");
 
         return info.toString();
     }
@@ -72,20 +72,15 @@ public class FactionFormatterService {
             }
         }
         if (targetRank == null) {
-            return "§cRank '" + rankName + "' does not exist.";
+            return ChatColor.RED + "Rank '" + rankName + "' does not exist.";
         }
 
-        int memberCount = 0;
-        for (FactionRankObject playerRank : faction.getFactionRanks()) {
-            if (playerRank.getRankName().equals(rankName)) {
-                memberCount++;
-            }
-        }
+        int memberCount = targetRank.getRankMembers().size();
 
-        return "§e§l=== Rank Info: §b§l" + rankName + " §e§l===\n" +
-                "§7Members: §a" + memberCount + "\n" +
-                "§7Permissions: §6" + targetRank.getPermissions().size() + "\n" +
-                "§e§l=======================";
+        return ChatColor.YELLOW.toString() + ChatColor.BOLD + "=== Rank Info: " + ChatColor.AQUA + ChatColor.BOLD + rankName + " " + ChatColor.YELLOW + ChatColor.BOLD + "===\n" +
+                ChatColor.GRAY + "Members: " + ChatColor.GREEN + memberCount + "\n" +
+                ChatColor.GRAY + "Permissions: " + ChatColor.GOLD + targetRank.getPermissions().size() + "\n" +
+                ChatColor.YELLOW + ChatColor.BOLD + "=======================";
     }
 
     public String SendRankPlayerInfo(FactionObject faction, String rankName){
@@ -97,27 +92,27 @@ public class FactionFormatterService {
             }
         }
         if (targetRank == null) {
-            return "§cRank '" + rankName + "' does not exist.";
+            return ChatColor.RED + "Rank '" + rankName + "' does not exist.";
         }
 
         StringBuilder info = new StringBuilder();
-        info.append("§e§l=== Players in Rank: §b§l").append(rankName).append(" §e§l===\n");
+        info.append(ChatColor.YELLOW).append(ChatColor.BOLD).append("=== Players in Rank: ").append(ChatColor.AQUA).append(ChatColor.BOLD).append(rankName).append(ChatColor.YELLOW).append(ChatColor.BOLD).append(" ===\n");
         boolean hasMembers = false;
         for (FactionRankObject rank : faction.getFactionRanks()) {
             if (rank.getRankName().equals(rankName)) {
                 for (UUID playerUUID : rank.getRankMembers()) {
                     Player player = Bukkit.getPlayer(playerUUID);
                     if (player != null) {
-                        info.append("§a- ").append(player.getName()).append("\n");
+                        info.append(ChatColor.GREEN).append("- ").append(player.getName()).append("\n");
                         hasMembers = true;
                     }
                 }
             }
         }
         if (!hasMembers) {
-            info.append("§7No players in this rank.\n");
+            info.append(ChatColor.GRAY).append("No players in this rank.\n");
         }
-        info.append("§e§l=======================");
+        info.append(ChatColor.YELLOW).append(ChatColor.BOLD).append("=======================");
 
         return info.toString();
     }
@@ -131,19 +126,19 @@ public class FactionFormatterService {
             }
         }
         if (targetRank == null) {
-            return "§cRank '" + rankName + "' does not exist.";
+            return ChatColor.RED + "Rank '" + rankName + "' does not exist.";
         }
 
         StringBuilder info = new StringBuilder();
-        info.append("§e§l=== Permissions for Rank: §b§l").append(rankName).append(" §e§l===\n");
+        info.append(ChatColor.YELLOW).append(ChatColor.BOLD).append("=== Permissions for Rank: ").append(ChatColor.AQUA).append(ChatColor.BOLD).append(rankName).append(ChatColor.YELLOW).append(ChatColor.BOLD).append(" ===\n");
         if (targetRank.getPermissions().isEmpty()) {
-            info.append("§7No permissions assigned.\n");
+            info.append(ChatColor.GRAY).append("No permissions assigned.\n");
         } else {
             for (String perm : targetRank.getPermissions()) {
-                info.append("§6- ").append(perm).append("\n");
+                info.append(ChatColor.GOLD).append("- ").append(perm).append("\n");
             }
         }
-        info.append("§e§l=======================");
+        info.append(ChatColor.YELLOW).append(ChatColor.BOLD).append("=======================");
 
         return info.toString();
     }
@@ -170,6 +165,15 @@ public class FactionFormatterService {
         // This is used to ensure the right format in the team naming (basic characters and 16 characters limit)
         String base = "f_" + factionName.toLowerCase().replaceAll("[^a-z0-9_]", "");
         return base.substring(0, Math.min(16, base.length()));
+    }
+
+    /**
+     * The scoreboard team is always registered under "faction_" + toTeamName(...) (see
+     * FactionHelperService#createTabTeam). Every lookup must use this same full name, or
+     * scoreboard.getTeam(...) silently returns null.
+     */
+    public String toFullTeamName(String factionName) {
+        return "faction_" + toTeamName(factionName);
     }
 
     public String useLegacyText(String text){
@@ -203,10 +207,14 @@ public class FactionFormatterService {
         return LEGACY.serialize(parsed);
     }
 
-    public void setTeamPrefix(String factionName, String prefixName, ArrayList<String> colors){
+    public void setTeamPrefix(FactionObject faction, String prefixName, ArrayList<String> colors){
         Scoreboard scoreboard = Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard();
-        Team team = scoreboard.getTeam(toTeamName(factionName));
+        Team team = scoreboard.getTeam(toFullTeamName(faction.getFactionName()));
         if (team == null) return;
         team.setPrefix(useMiniMessage(" [" + prefixName + "] ", colors));
+
+        // Keep the faction's stored color in sync with what's actually shown in the tab list -
+        // this is also what colors the faction's BlueMap claim markers (FactionMapRenderService).
+        faction.setFactionColors(colors);
     }
 }

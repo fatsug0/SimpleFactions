@@ -31,6 +31,7 @@ public class FactionObjectWrapper {
         factionObject.getSavedFactionRanks().forEach((uuid, rank) -> this.savedFactionRanks.put(uuid.toString(), rank));
         this.power = factionObject.getPower();
         this.teamPrefix = factionObject.getTeamPrefix();
+        this.factionColors = new ArrayList<>(factionObject.getFactionColors());
         for (int i = 0; i < factionObject.getFactionInv().getSize(); i++) {
             this.factionInv.put(i, itemToBase64(factionObject.getFactionInv().getItem(i)));
         }
@@ -84,6 +85,11 @@ public class FactionObjectWrapper {
     private String teamPrefix;
     public String getTeamPrefix() {
         return this.teamPrefix;
+    }
+
+    private ArrayList<String> factionColors = new ArrayList<>();
+    public ArrayList<String> getColors() {
+        return this.factionColors == null ? new ArrayList<>() : this.factionColors;
     }
 
     private HashMap<Integer, Object> factionInv = new HashMap<>();

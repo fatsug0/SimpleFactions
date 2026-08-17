@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -41,8 +42,18 @@ public class FactionSubStorage implements CommandInterface {
     }
 
     @Override
+    public boolean requiresInput() {
+        return false;
+    }
+
+    @Override
     public String getUsage() {
         return "/faction storage";
+    }
+
+    @Override
+    public String getId() {
+        return "storage";
     }
 
     @Override
@@ -54,6 +65,7 @@ public class FactionSubStorage implements CommandInterface {
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.CHEST);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Faction Storage");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");

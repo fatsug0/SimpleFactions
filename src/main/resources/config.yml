@@ -41,5 +41,14 @@ faction:
     fire-spread: false
     tnt-explosion: false
 
+  powerToChunkSelectionCoefficient: 1.25
+
 # Enable the BlueMap addon of the plugin (be able to see the different factions on BlueMap)
 enable-bluemap-addon: true
+
+# Debug / testing options - do not leave these enabled on a real server
+debug:
+  # If true, ALL saved faction data (factions, claims, invites, raids) is wiped from memory
+  # every time the plugin starts, regardless of what's saved on disk. Useful for repeatedly
+  # testing faction creation/permissions from a clean slate without deleting data files by hand.
+  wipe-factions-on-start: false

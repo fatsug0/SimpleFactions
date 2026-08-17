@@ -6,6 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -44,6 +45,11 @@ public class FactionSubDisband implements CommandInterface {
     }
 
     @Override
+    public String getId() {
+        return "disband";
+    }
+
+    @Override
     public HashMap<String, CommandInterface> getSubCommands() {
         return new HashMap<>();
     }
@@ -52,6 +58,7 @@ public class FactionSubDisband implements CommandInterface {
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.TNT);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Disband Faction");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");

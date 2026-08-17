@@ -107,11 +107,20 @@ public class FactionRankService {
             return;
         }
 
-        for (UUID playerUUID : new ArrayList<>(rank.getRankMembers())) {
+        ArrayList<UUID> displacedMembers = new ArrayList<>(rank.getRankMembers());
+        for (UUID playerUUID : displacedMembers) {
             removePlayerFromRank(faction, playerUUID, normalizedRankName, false);
         }
 
         faction.removeFactionRank(rank);
+
+        // Members of the deleted rank would otherwise be left with no rank (and no permissions)
+        // until something else happens to repair it - fall them back to MEMBER immediately.
+        if (!normalizedRankName.equals("MEMBER")) {
+            for (UUID playerUUID : displacedMembers) {
+                AddPlayerToRank(faction, playerUUID, "MEMBER");
+            }
+        }
 
         if (player != null) {
             player.sendMessage(ChatColor.GREEN + ChatColor.BOLD.toString() + "Rank deleted: " + normalizedRankName);

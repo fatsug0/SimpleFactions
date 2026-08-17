@@ -6,6 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -34,12 +35,17 @@ public class FactionSubRankManageInfo implements CommandInterface {
 
     @Override
     public String getPermission() {
-        return null;
+        return "simplefactions.rank.manage.info";
     }
 
     @Override
     public String getUsage() {
         return "/faction rank manage info <rankName>";
+    }
+
+    @Override
+    public String getId() {
+        return "rank.manage.info";
     }
 
     @Override
@@ -51,6 +57,7 @@ public class FactionSubRankManageInfo implements CommandInterface {
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.WRITABLE_BOOK);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Managed Rank Info");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");
@@ -68,6 +75,11 @@ public class FactionSubRankManageInfo implements CommandInterface {
     public void execute(CommandSender sender, String[] args) {
         if (args.length != 4 || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())) {
             sender.sendMessage(sendUsageError());
+            return;
+        }
+
+        if (getPermission() != null && !player.hasPermission(getPermission())) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You do not have permission to use this command!");
             return;
         }
 

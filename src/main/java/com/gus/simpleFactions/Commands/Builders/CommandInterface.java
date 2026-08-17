@@ -1,7 +1,6 @@
 package com.gus.simpleFactions.Commands.Builders;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.inventory.ItemStack;
 
@@ -13,62 +12,37 @@ public interface CommandInterface {
     String getDescription();
     String getPermission();
     String getUsage();
+    String getId();
     HashMap<String, CommandInterface> getSubCommands();
-
-    default ItemStack getIcon() {
-        HashMap<String, CommandInterface> subCommands = getSubCommands();
-        if (subCommands != null && !subCommands.isEmpty()) {
-            return null;
-        }
-
-        String usage = getUsage() == null ? "" : getUsage().toLowerCase();
-        Material material;
-        if (usage.contains("rank create")) {
-            material = Material.ANVIL;
-        } else if (usage.contains("rank delete")) {
-            material = Material.BARRIER;
-        } else if (usage.contains("rank info")) {
-            material = Material.BOOKSHELF;
-        } else if (usage.contains("permissions add")) {
-            material = Material.ENCHANTED_BOOK;
-        } else if (usage.contains("permissions list")) {
-            material = Material.BOOKSHELF;
-        } else if (usage.contains("permissions remove")) {
-            material = Material.SHEARS;
-        } else if (usage.contains("player add")) {
-            material = Material.PLAYER_HEAD;
-        } else if (usage.contains("player list")) {
-            material = Material.PLAYER_HEAD;
-        } else if (usage.contains("player remove")) {
-            material = Material.SKELETON_SKULL;
-        } else {
-            material = switch (getName().toLowerCase()) {
-                case "admin" -> Material.COMMAND_BLOCK;
-                case "claim" -> Material.GRASS_BLOCK;
-                case "create" -> Material.OAK_SIGN;
-                case "disband" -> Material.TNT;
-                case "help" -> Material.BOOK;
-                case "info" -> Material.PAPER;
-                case "invite" -> Material.WRITABLE_BOOK;
-                case "join" -> Material.ENDER_PEARL;
-                case "kick" -> Material.IRON_BOOTS;
-                case "leave" -> Material.OAK_DOOR;
-                case "prefix" -> Material.NAME_TAG;
-                case "storage" -> Material.CHEST;
-                case "unclaim" -> Material.IRON_SHOVEL;
-                case "set" -> Material.RED_BED;
-                case "select" -> Material.SPYGLASS;
-                case "delete", "remove" -> Material.BARRIER;
-                case "list" -> Material.MAP;
-                case "add" -> Material.EMERALD;
-                default -> Material.STONE_BUTTON;
-            };
-        }
-
-        return new ItemStack(material);
-    }
+    ItemStack getIcon();
 
     void execute(CommandSender sender, String[] args);
+
+    /**
+     * Whether this command only makes sense for a player who is currently in a faction.
+     * Defaults to true since most subcommands operate on "your faction". Commands like
+     * create/join/help/admin, which are meant to be usable before joining a faction (or don't
+     * concern faction membership at all), override this to false.
+     */
+    default boolean requiresFaction() {
+        return true;
+    }
+
+    /**
+     * Whether this command needs additional arguments beyond its own fixed path to run (a
+     * player name, a rank name, a "confirm" safety token, etc.). Defaults to true (conservative:
+     * show usage rather than guess). Leaf commands whose full usage is exactly their path with
+     * nothing else needed (e.g. "/faction claim") override this to false, which lets the GUI run
+     * them directly on click instead of just showing their usage.
+     * <p>
+     * Commands gated behind a literal "confirm" token deliberately keep the default (true) even
+     * though the token itself is fixed - that confirmation step exists specifically to stop a
+     * single accidental click/keypress from doing something destructive, and a GUI auto-execute
+     * would defeat that safety net.
+     */
+    default boolean requiresInput() {
+        return true;
+    }
 
     default String sendUsageError(){
         String accent = ChatColor.GOLD.toString();

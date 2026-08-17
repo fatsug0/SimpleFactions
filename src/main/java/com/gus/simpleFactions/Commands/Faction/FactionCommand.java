@@ -9,9 +9,14 @@ import com.gus.simpleFactions.Commands.Faction.Sub.Rank.FactionSubRank;
 import com.gus.simpleFactions.FactionHandlers.Objects.FactionObject;
 import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
@@ -31,6 +36,16 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
                 "/faction <admin|help|info|invite|join|kick|leave|unclaim|prefix|raid|storage>"
         );
         this.plugin = plugin;
+    }
+
+    @Override
+    public String getId() {
+        return "faction";
+    }
+
+    @Override
+    public boolean requiresFaction() {
+        return false;
     }
 
     @Override
@@ -56,11 +71,36 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
     }
 
     @Override
+    public ItemStack getIcon() {
+        ItemStack item = new ItemStack(Material.WHITE_BANNER);
+        ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Faction");
+        List<String> lore = new ArrayList<>();
+        lore.add(ChatColor.DARK_GRAY + "────────────────────");
+        for (String line : getDescription().strip().split("\\R")) {
+            String trimmed = line.trim();
+            if (!trimmed.isBlank()) lore.add(ChatColor.GRAY + trimmed);
+        }
+        lore.add(ChatColor.DARK_GRAY + "────────────────────");
+        meta.setLore(lore);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    @Override
     public void execute(CommandSender sender, String[] args) {
-        // Get the last argument and execute the command linked to it
-        // Need to get the last argument subcommand and return them
-        // Last argument -> args[args.length - 1]
-        if (args.length == 0 || !getSubCommands().containsKey(args[0])) {
+        // Open GUI if no subcommand provided
+        if (args.length == 0) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "Only players can use this command!");
+                return;
+            }
+            plugin.factionCommandUi.OpenCommand(player, "faction");
+            return;
+        }
+
+        if (!getSubCommands().containsKey(args[0])) {
             sender.sendMessage(sendUsageError());
             return;
         }
@@ -162,20 +202,21 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
                     return factionPlayersNames;
 
                 } else if (command.getPermission().equalsIgnoreCase("simplefactions.rank.manage.permissions.add")) {
-                    // Get all permissions
-
-                    // Remove all permissions already in the rank
+                    // Permission-name completion isn't implemented yet - fall back to nothing
+                    // rather than falling through into the "remove"/"toggle" cases below.
+                    return Collections.emptyList();
                 } else {
                     return accessibleSubCommands(player, command, args[args.length - 1]);
                 }
 
             case "remove":
                 if (command.getPermission().equalsIgnoreCase("simplefactions.rank.manage.player.remove")) {
-                    // Get all players in the rank
-
-                    // Transform all players into strings (their names)
+                    // Rank-member completion isn't implemented yet - fall back to nothing
+                    // rather than falling through into the "toggle" case below.
+                    return Collections.emptyList();
                 } else if (command.getPermission().equalsIgnoreCase("simplefactions.rank.manage.permissions.remove")) {
-                    // Get all permissions in the rank
+                    // Permission-name completion isn't implemented yet either.
+                    return Collections.emptyList();
                 } else {
                     return accessibleSubCommands(player, command, args[args.length - 1]);
                 }
@@ -196,6 +237,9 @@ public class FactionCommand extends CommandHandler implements CommandInterface {
 
                     case 4:
                         return Arrays.asList("enable", "disable");
+
+                    default:
+                        return Collections.emptyList();
                 }
 
             case "admin":

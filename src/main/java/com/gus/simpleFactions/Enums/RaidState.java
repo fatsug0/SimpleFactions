@@ -5,5 +5,6 @@ public enum RaidState {
     START,
     GROUNDS,
     CAPTURE_FLAG,
-    END
+    END,
+    PAUSED
 }

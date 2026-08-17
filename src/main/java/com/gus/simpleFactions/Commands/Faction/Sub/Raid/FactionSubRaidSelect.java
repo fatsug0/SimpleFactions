@@ -8,6 +8,7 @@ import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -46,14 +47,20 @@ public class FactionSubRaidSelect implements CommandInterface {
     }
 
     @Override
+    public String getId() {
+        return "raid.select";
+    }
+
+    @Override
     public HashMap<String, CommandInterface> getSubCommands() {
-        return null;
+        return new HashMap<>();
     }
 
     @Override
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.SPYGLASS);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Select Raid Chunk");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");
@@ -85,7 +92,7 @@ public class FactionSubRaidSelect implements CommandInterface {
         FactionObject chunkOwner = plugin.factionManager.factionLandService.getLinkedChunks().get(player.getLocation().getChunk());
 
         if (chunkOwner == null) {
-            player.sendMessage("This chunk is not claimed.");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "This chunk is not claimed!");
             return;
         }
 
@@ -99,7 +106,7 @@ public class FactionSubRaidSelect implements CommandInterface {
         int currentSelectionSize = plugin.raidManager.getCurrentFactionSelection().getOrDefault(playerFaction, new java.util.ArrayList<>()).size();
         int maxSelectionSize = Math.max(1, (int) Math.round(plugin.raidManager.powerToChunkSelectionCoefficient * chunkOwner.getPower()));
         if (currentSelectionSize >= maxSelectionSize) {
-            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You have reached the maximum of chunk selections for raiding !");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You have reached the maximum of chunk selections for raiding!");
             return;
         }
 
@@ -110,12 +117,12 @@ public class FactionSubRaidSelect implements CommandInterface {
         }
 
         if (plugin.raidManager.getCurrentFactionSelection().getOrDefault(playerFaction, new java.util.ArrayList<>()).contains(player.getLocation().getChunk())) {
-            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You already selected this chunk !");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You already selected this chunk!");
             return;
         }
 
         plugin.raidManager.addChunkToSelection(playerFaction, player.getLocation().getChunk());
-        player.sendMessage(ChatColor.GREEN + "Raid chunk selected.");
+        player.sendMessage(ChatColor.GREEN + ChatColor.BOLD.toString() + "Raid chunk selected.");
     }
 
     private boolean isWeakChunk(Chunk chunk, FactionObject chunkOwner){

@@ -6,6 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -44,6 +45,11 @@ public class FactionSubRankManagePermissionsAdd implements CommandInterface {
     }
 
     @Override
+    public String getId() {
+        return "rank.manage.permissions.add";
+    }
+
+    @Override
     public HashMap<String, CommandInterface> getSubCommands() {
         return new HashMap<>();
     }
@@ -52,6 +58,7 @@ public class FactionSubRankManagePermissionsAdd implements CommandInterface {
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.ENCHANTED_BOOK);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Add Permission");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");
@@ -78,7 +85,7 @@ public class FactionSubRankManagePermissionsAdd implements CommandInterface {
         }
 
         ArrayList<String> permissions = new ArrayList<>();
-        for (int i = 5; i <= args.length; i++) {
+        for (int i = 5; i < args.length; i++) {
             permissions.add(args[i]);
         }
 

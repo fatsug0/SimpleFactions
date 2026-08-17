@@ -7,6 +7,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -46,6 +47,11 @@ public class FactionSubKick implements CommandInterface {
     }
 
     @Override
+    public String getId() {
+        return "kick";
+    }
+
+    @Override
     public HashMap<String, CommandInterface> getSubCommands() {
         return new HashMap<>();
     }
@@ -54,6 +60,7 @@ public class FactionSubKick implements CommandInterface {
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.IRON_BOOTS);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Kick Player");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");
@@ -69,7 +76,7 @@ public class FactionSubKick implements CommandInterface {
 
     @Override
     public void execute(CommandSender sender, String[] args) {
-        if (args.length != 3 && !args[2].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())){
+        if (args.length != 3 || !args[2].equalsIgnoreCase("confirm") || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())){
             sender.sendMessage(sendUsageError());
             return;
         }
@@ -79,6 +86,11 @@ public class FactionSubKick implements CommandInterface {
             return;
         }
 
-        plugin.factionManager.factionMembershipService.KickPlayer(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), Objects.requireNonNull(Bukkit.getPlayer(args[1])).getUniqueId(), true);
+        Player targetPlayer = Bukkit.getPlayer(args[1]);
+        if (targetPlayer == null) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "Player not found or not online!");
+            return;
+        }
+        plugin.factionManager.factionMembershipService.KickPlayer(plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()), targetPlayer.getUniqueId(), true);
     }
 }

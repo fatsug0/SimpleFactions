@@ -5,6 +5,7 @@ import com.gus.simpleFactions.SimpleFactions;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -43,6 +44,11 @@ public class FactionSubRankManagePlayer implements CommandInterface {
     }
 
     @Override
+    public String getId() {
+        return "rank.manage.player";
+    }
+
+    @Override
     public HashMap<String, CommandInterface> getSubCommands() {
         return new HashMap<>(){{
            put("add", new FactionSubRankManagePlayerAdd(plugin));
@@ -55,6 +61,7 @@ public class FactionSubRankManagePlayer implements CommandInterface {
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.PLAYER_HEAD);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Rank Players");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");

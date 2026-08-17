@@ -107,13 +107,13 @@ public class FactionMembershipService {
     public void KickPlayer(FactionObject faction, UUID playerUUID, boolean sendMsg) {
         Player player = plugin.factionManager.factionHelperService.checkPlayer(playerUUID);
         if (player == null) {
-            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
+            plugin.getLogger().warning("Something went wrong when trying to find the player with the UUID: " + playerUUID);
             return;
         }
 
         // Check if the player is in the faction
         if (!faction.getFactionMembers().contains(playerUUID) || !getPlayerFactionLink().containsKey(playerUUID)) {
-            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The player you are trying to kick is not in your faction !");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The player you are trying to kick is not in your faction!");
             return;
         }
         // Remove him from the faction, Faction side
@@ -122,19 +122,19 @@ public class FactionMembershipService {
         // Remove him from the faction, Manager side
         removePlayerFactionLink(playerUUID);
 
-        if (sendMsg) player.sendMessage("§2You have been kicked of the faction: " + faction.getFactionName() + " !");
+        if (sendMsg) player.sendMessage(ChatColor.GREEN + ChatColor.BOLD.toString() + "You have been kicked from the faction: " + faction.getFactionName() + "!");
     }
 
     public void LeaveFaction(FactionObject faction, UUID playerUUID) {
         Player player = plugin.factionManager.factionHelperService.checkPlayer(playerUUID);
         if (player == null) {
-            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
+            plugin.getLogger().warning("Something went wrong when trying to find the player with the UUID: " + playerUUID);
             return;
         }
 
         // Check if the player is not the Owner of the Faction
         if (playerUUID.equals(faction.getOwner())) {
-            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You can't leave your own faction !");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You can't leave your own faction!");
             return;
         }
 
@@ -142,29 +142,30 @@ public class FactionMembershipService {
         removePlayerFactionLink(playerUUID);
 
         // Remove player from the team
-        Objects.requireNonNull(Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeam(plugin.factionManager.factionFormatterService.toTeamName(faction.getFactionName()))).removeEntry(player.getName());
+        removePlayerFromScoreboardTeam(faction, player);
 
         // Remove player from the Factions member list
         faction.removeFactionMember(playerUUID);
 
-        player.sendMessage(ChatColor.RED + ChatColor.ITALIC.toString() + "You have left faction the faction " + faction.getFactionName());
+        player.sendMessage(ChatColor.YELLOW + "You have left the faction " + faction.getFactionName() + "!");
     }
 
     public void DisbandFaction(FactionObject faction, UUID playerUUID) {
         Player player = plugin.factionManager.factionHelperService.checkPlayer(playerUUID);
         if (player == null) {
-            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
+            plugin.getLogger().warning("Something went wrong when trying to find the player with the UUID: " + playerUUID);
             return;
         }
 
         // Check if the player is the Owner of the Faction
         if (!playerUUID.equals(faction.getOwner())) {
-            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You can only disband your faction if you are its owner !");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You can only disband your faction if you are its owner!");
             return;
         }
 
         // Remove EVERY player of the Faction from FactionManagers FactionPlayerLink ArrayList
-        for (UUID uuid : getPlayerFactionLink().keySet()){
+        // (iterate over a copy of the key set, since removePlayerFactionLink mutates the live map)
+        for (UUID uuid : new ArrayList<>(getPlayerFactionLink().keySet())){
             if (faction.getFactionMembers().contains(uuid)){
                 removePlayerFactionLink(uuid);
             }
@@ -176,30 +177,62 @@ public class FactionMembershipService {
         }
 
         // Unclaim every claimed land (and weak chunks)
-        for (Chunk chunk : plugin.factionManager.factionLandService.getLinkedChunks().keySet()){
-            if (plugin.factionManager.factionLandService.getLinkedChunks().get(chunk).equals(faction)){
+        // (iterate over a copy of the key set, since removeLinkedChunk mutates the live map)
+        for (Chunk chunk : new ArrayList<>(plugin.factionManager.factionLandService.getLinkedChunks().keySet())){
+            if (faction.equals(plugin.factionManager.factionLandService.getLinkedChunks().get(chunk))){
                 plugin.factionManager.factionLandService.removeLinkedChunk(chunk);
             }
         }
+        faction.getHardClaimedChunks().clear();
+        faction.getWeakClaimedChunks().clear();
 
-        Objects.requireNonNull(Objects.requireNonNull(Bukkit.getScoreboardManager()).getMainScoreboard().getTeam(plugin.factionManager.factionFormatterService.toTeamName(faction.getFactionName()))).unregister();
+        // Remove any BlueMap markers, otherwise the disbanded faction's territory keeps showing
+        // on the map forever ("ghost" claims that nothing owns anymore).
+        if (plugin.factionManager.factionMapRenderService.getUSE_BLUEMAP_ADDON()) {
+            plugin.factionManager.factionMapRenderService.RemoveFactionFromMap(faction);
+        }
+
+        unregisterScoreboardTeam(faction);
 
         // Remove this faction from the factions lists in the FactionManager
         removeExistingFaction(faction);
 
-        player.sendMessage(ChatColor.RED + ChatColor.ITALIC.toString() + "You have, as faction owner, disbanded your faction " + faction.getFactionName());
+        player.sendMessage(ChatColor.YELLOW + "You have disbanded your faction " + faction.getFactionName() + "!");
+    }
+
+    // Null-safe scoreboard team helpers (the team may legitimately be missing if creation failed earlier)
+    private void removePlayerFromScoreboardTeam(FactionObject faction, Player player) {
+        var scoreboardManager = Bukkit.getScoreboardManager();
+        if (scoreboardManager == null) return;
+        var team = scoreboardManager.getMainScoreboard().getTeam(plugin.factionManager.factionFormatterService.toFullTeamName(faction.getFactionName()));
+        if (team == null) {
+            plugin.getLogger().warning("No scoreboard team found for faction: " + faction.getFactionName());
+            return;
+        }
+        team.removeEntry(player.getName());
+    }
+
+    private void unregisterScoreboardTeam(FactionObject faction) {
+        var scoreboardManager = Bukkit.getScoreboardManager();
+        if (scoreboardManager == null) return;
+        var team = scoreboardManager.getMainScoreboard().getTeam(plugin.factionManager.factionFormatterService.toFullTeamName(faction.getFactionName()));
+        if (team == null) {
+            plugin.getLogger().warning("No scoreboard team found for faction: " + faction.getFactionName());
+            return;
+        }
+        team.unregister();
     }
 
     public void TeleportHome(FactionObject faction, UUID playerUUID) {
         Player player = plugin.factionManager.factionHelperService.checkPlayer(playerUUID);
         if (player == null) {
-            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
+            plugin.getLogger().warning("Something went wrong when trying to find the player with the UUID: " + playerUUID);
             return;
         }
 
         // There is no home setup yet
         if (faction.getFactionHome() == null) {
-            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You don't have a home set for your faction !\n Set one with /f home set");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "You don't have a home set for your faction! Set one with /f home set");
             return;
         }
         // Use a Bukkit Runnable
@@ -209,32 +242,38 @@ public class FactionMembershipService {
     public void SetHome(FactionObject faction, UUID playerUUID) {
         Player player = plugin.factionManager.factionHelperService.checkPlayer(playerUUID);
         if (player == null) {
-            System.out.println("Something went wrong when trying to find the player with the UUID: " + playerUUID);
+            plugin.getLogger().warning("Something went wrong when trying to find the player with the UUID: " + playerUUID);
             return;
         }
 
         // Same home set, cancel set home
         if (player.getLocation().equals(faction.getFactionHome())) {
-            Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The new home you are trying to set is the same as your current one !");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The new home you are trying to set is the same as your current one!");
             return;
         }
 
-        // Heck if the wanted home is in the claimed chunks of the faction
+        // Check if the wanted home is in the claimed chunks of the faction
         if (faction.getHardClaimedChunks().isEmpty() || !faction.getHardClaimedChunks().contains(player.getLocation().getChunk())) {
-            Objects.requireNonNull(Bukkit.getPlayer(playerUUID)).sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The home you are trying to set is not in the claimed chunks of your faction !");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The home you are trying to set is not in the claimed chunks of your faction!");
             return;
         }
 
         // Remove and set the new Faction home
         faction.setFactionHome(player.getLocation());
 
-        player.sendMessage("§2You have, set the home of your faction !");
+        player.sendMessage(ChatColor.GREEN + ChatColor.BOLD.toString() + "You have set the home of your faction!");
     }
 
     public void JoinFaction(UUID playerUUID, String factionName){
         // Check if an invitation is pending
-        for (FactionInvite invite : pendingFactionInvites) {
+        Iterator<FactionInvite> iterator = pendingFactionInvites.iterator();
+        while (iterator.hasNext()) {
+            FactionInvite invite = iterator.next();
             if (invite.invitingFaction.getFactionName().equals(factionName) && invite.invitedPlayer.equals(playerUUID)) {
+                // Consume the invite now that it's being accepted, otherwise it lingers forever
+                // and can be "reused" to rejoin later without a fresh invite.
+                iterator.remove();
+
                 // If the player already has a faction, kick them from it
                 if (playerFactionLink.containsKey(playerUUID)){
                     KickPlayer(playerFactionLink.get(playerUUID), playerUUID, false);
@@ -256,7 +295,7 @@ public class FactionMembershipService {
                 plugin.factionManager.factionRankService.AddPlayerToRank(invite.invitingFaction, plugin.factionManager.factionHelperService.checkPlayer(playerUUID), "MEMBER");
 
                 // Confirmation message
-                plugin.factionManager.factionHelperService.checkPlayer(playerUUID).sendMessage(ChatColor.GREEN + ChatColor.BOLD.toString() + "You have joined the faction " + invite.invitingFaction.getFactionName() + " !");
+                plugin.factionManager.factionHelperService.checkPlayer(playerUUID).sendMessage(ChatColor.GREEN + ChatColor.BOLD.toString() + "You have joined the faction " + invite.invitingFaction.getFactionName() + "!");
                 return;
             }
         }
@@ -276,12 +315,12 @@ public class FactionMembershipService {
         // Send confirmations
         if (plugin.factionManager.factionHelperService.checkPlayer(playerUUID) != null)
             plugin.factionManager.factionHelperService.checkPlayer(playerUUID).sendMessage(
-                    ChatColor.GREEN + ChatColor.BOLD.toString() + "You have been invited to join " + invitingFaction.getFactionName() + " !");
+                    ChatColor.GREEN + ChatColor.BOLD.toString() + "You have been invited to join " + invitingFaction.getFactionName() + "!");
 
         if (plugin.factionManager.factionHelperService.checkPlayer(senderUUID) != null &&
                 plugin.factionManager.factionHelperService.checkPlayer(playerUUID) != null)
             plugin.factionManager.factionHelperService.checkPlayer(senderUUID).sendMessage(
-                    ChatColor.GRAY + "You have invited " + ChatColor.ITALIC + Bukkit.getPlayer(playerUUID).getName() + ChatColor.RESET + ChatColor.GRAY + " to join " + invitingFaction.getFactionName() + " !");
+                    ChatColor.GRAY + "You have invited " + ChatColor.ITALIC + plugin.factionManager.factionHelperService.checkPlayer(playerUUID).getName() + ChatColor.RESET + ChatColor.GRAY + " to join " + invitingFaction.getFactionName() + " !");
     }
 
     public ArrayList<FactionObject> getPlayerInvites(UUID playerUUID){

@@ -7,13 +7,13 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 
 public class FactionSubInvite implements CommandInterface {
 
@@ -46,6 +46,11 @@ public class FactionSubInvite implements CommandInterface {
     }
 
     @Override
+    public String getId() {
+        return "invite";
+    }
+
+    @Override
     public HashMap<String, CommandInterface> getSubCommands() {
         return new HashMap<>();
     }
@@ -54,6 +59,7 @@ public class FactionSubInvite implements CommandInterface {
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.WRITABLE_BOOK);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Invite Player");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");
@@ -79,6 +85,12 @@ public class FactionSubInvite implements CommandInterface {
             return;
         }
 
-        plugin.factionManager.factionMembershipService.InvitePlayer(player.getUniqueId(), Objects.requireNonNull(Bukkit.getPlayer(args[1])).getUniqueId(), plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()));
+        Player targetPlayer = Bukkit.getPlayer(args[1]);
+        if (targetPlayer == null) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "Player not found or not online!");
+            return;
+        }
+
+        plugin.factionManager.factionMembershipService.InvitePlayer(player.getUniqueId(), targetPlayer.getUniqueId(), plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId()));
     }
 }

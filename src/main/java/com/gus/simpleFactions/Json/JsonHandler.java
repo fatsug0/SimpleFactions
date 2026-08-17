@@ -112,9 +112,6 @@ public class JsonHandler {
         plugin.factionManager.factionLandService.unWrapLinkedChunks(ReadJson("land-service", "linkedChunks", new TypeToken<Map<String, String>>() {}.getType()));
         plugin.factionManager.factionLandService.unWrapPlayerChunkStateStrings(ReadJson("land-service", "playerChunkState", new TypeToken<Map<String, PlayerChunkState>>() {}.getType()));
 
-        // Load Map Render Service
-        plugin.factionManager.factionMapRenderService.unWrapBluemapClaimedChunk(ReadJson("map-render-service", "bluemapClaimedChunk", new TypeToken<Map<String, Double>>() {}.getType()));
-
         // Load Faction Rank Service
         plugin.factionManager.factionRankService.unWrapPerms(ReadJson("faction-rank-service", "perms", new TypeToken<Map<String, ArrayList<Map<String, Boolean>>>>() {}.getType()));
     }
@@ -127,9 +124,6 @@ public class JsonHandler {
         // Save Faction Land Service
         WriteJson("land-service", "linkedChunks", plugin.factionManager.factionLandService.getWrappedLinkedChunks());
         WriteJson("land-service", "playerChunkState", plugin.factionManager.factionLandService.getWrappedPlayerChunkState());
-
-        // Save Map Render Service
-        WriteJson("map-render-service", "bluemapClaimedChunk", plugin.factionManager.factionMapRenderService.getWrappedBluemapClaimedChunk());
 
         // PermissionAttachment objects are runtime Bukkit state; rank permissions are persisted inside factions.
         WriteJson("faction-rank-service", "perms", new HashMap<String, ArrayList<Map<String, Boolean>>>());

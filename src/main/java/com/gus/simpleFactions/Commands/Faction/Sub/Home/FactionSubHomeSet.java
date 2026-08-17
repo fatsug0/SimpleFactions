@@ -6,6 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -39,8 +40,18 @@ public class FactionSubHomeSet implements CommandInterface {
     }
 
     @Override
+    public boolean requiresInput() {
+        return false;
+    }
+
+    @Override
     public String getUsage() {
         return "/faction home set";
+    }
+
+    @Override
+    public String getId() {
+        return "home.set";
     }
 
     @Override
@@ -52,6 +63,7 @@ public class FactionSubHomeSet implements CommandInterface {
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.RED_BED);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Set Home");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");
@@ -68,7 +80,7 @@ public class FactionSubHomeSet implements CommandInterface {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if (args.length != 2 || !(sender instanceof Player player) || !plugin.factionManager.factionMembershipService.getPlayerFactionLink().containsKey(player.getUniqueId())){
-            sendUsageError();
+            sender.sendMessage(sendUsageError());
             return;
         }
 

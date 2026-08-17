@@ -42,7 +42,7 @@ public class TeleportManager {
 
                 // Check if the player has moved
                 if (hasMoved(startLocationCache, Objects.requireNonNull(Bukkit.getPlayer(player)).getLocation())){
-                    Objects.requireNonNull(Bukkit.getPlayer(player)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText("\"Teleportation cancelled, you moved !"));
+                    Objects.requireNonNull(Bukkit.getPlayer(player)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText("Teleportation cancelled, you moved!"));
                     CancelTeleport(player, true);
                     cancel();
                     return;
@@ -59,7 +59,7 @@ public class TeleportManager {
                 }
 
                 // Send a status message every second
-                if (timer % 20 == 0) Objects.requireNonNull(Bukkit.getPlayer(player)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText("Teleporting in: " + timer / 20 + " !"));
+                if (timer % 20 == 0) Objects.requireNonNull(Bukkit.getPlayer(player)).spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText("Teleporting in: " + timer / 20));
 
                 // Else continue counting
                 timer -= 5;

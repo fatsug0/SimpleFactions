@@ -7,6 +7,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -46,6 +47,11 @@ public class FactionSubPrefix implements CommandInterface {
     }
 
     @Override
+    public String getId() {
+        return "prefix";
+    }
+
+    @Override
     public HashMap<String, CommandInterface> getSubCommands() {
         return new HashMap<>();
     }
@@ -54,6 +60,7 @@ public class FactionSubPrefix implements CommandInterface {
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.NAME_TAG);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Set Prefix");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");
@@ -80,6 +87,12 @@ public class FactionSubPrefix implements CommandInterface {
         }
 
         FactionObject faction = plugin.factionManager.factionMembershipService.getPlayerFactionLink().get(player.getUniqueId());
-        plugin.factionManager.factionFormatterService.setTeamPrefix(faction.getFactionName(), args[1], new ArrayList<>(Arrays.asList(args).subList(2, args.length)));
+        try {
+            plugin.factionManager.factionFormatterService.setTeamPrefix(faction, args[1], new ArrayList<>(Arrays.asList(args).subList(2, args.length)));
+        } catch (Exception e) {
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "One of the colors you provided is invalid! Use color names or hex codes like #FFAA00.");
+            return;
+        }
+        player.sendMessage(ChatColor.GREEN + ChatColor.BOLD.toString() + "Faction prefix updated!");
     }
 }

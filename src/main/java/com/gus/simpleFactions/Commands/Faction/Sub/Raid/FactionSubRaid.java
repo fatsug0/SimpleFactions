@@ -7,6 +7,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -45,6 +46,11 @@ public class FactionSubRaid implements CommandInterface {
     }
 
     @Override
+    public String getId() {
+        return "raid";
+    }
+
+    @Override
     public HashMap<String, CommandInterface> getSubCommands() {
         return new HashMap<>() {{
             put("select", new FactionSubRaidSelect(plugin));
@@ -55,6 +61,7 @@ public class FactionSubRaid implements CommandInterface {
     public ItemStack getIcon() {
         ItemStack item = new ItemStack(Material.NETHERITE_SWORD);
         ItemMeta meta = item.getItemMeta();
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Raid");
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.DARK_GRAY + "────────────────────");
@@ -89,7 +96,7 @@ public class FactionSubRaid implements CommandInterface {
         }
 
         if (defendingFaction == null) {
-            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The defending faction you tried to attack doesn't exists!");
+            player.sendMessage(ChatColor.RED + ChatColor.BOLD.toString() + "The defending faction you tried to attack doesn't exist!");
             return;
         }
 
